@@ -12,9 +12,9 @@
 Launcher::Launcher(QObject* parent): QObject(parent){}
 
 void Launcher::launch(
-	const QString& path, 
-	const QStringList& args,
-	const QStringList& argv
+	const QString& path, 		// discord executable
+	const QStringList& args, 	// discord args (-o)
+	const QStringList& argv 	// mod loader full argv
 ) {
 	QJsonArray jsonArgs;
 
@@ -23,6 +23,7 @@ void Launcher::launch(
 
     QProcess process;
 
+	// TODO: fix relaunches with GUI
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
 	environment.insert("MODLOADER_MOD_ENTRYPOINT", QString::fromStdString(PatcherPath().string()));
