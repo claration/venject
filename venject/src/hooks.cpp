@@ -1,4 +1,4 @@
-#if defined(__APPLE__)
+#ifdef __APPLE__
 #error "Apple is not supported"
 #endif
 
@@ -136,4 +136,5 @@ void init() {
 
 }
 
+#else
 #endif

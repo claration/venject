@@ -58,15 +58,11 @@ std::string redirect_asar_path(
     const std::string& app_folder
 ) {
     for (char sep : {'/', '\\'}) {
-        const std::string original =
-            "resources" + std::string(1, sep) + "_app.asar";
+        const std::string original = "resources" + std::string(1, sep) + "_app.asar";
 
         if (path.find(original) != std::string::npos) {
-            const std::string from =
-                std::string(1, sep) + "_app.asar";
-
-            const std::string to =
-                std::string(1, sep) + "app.asar";
+            const std::string from = std::string(1, sep) + "_app.asar";
+            const std::string to = std::string(1, sep) + "app.asar";
 
             auto result = path;
             std::size_t pos = 0;
@@ -84,7 +80,7 @@ std::string redirect_asar_path(
         const std::string needle =
             app_folder.empty()
                 ? "resources" + std::string(1, sep) + "app.asar"
-                : app_folder + std::string(1, sep) +
+                :  app_folder + std::string(1, sep) +
                   "resources" + std::string(1, sep) + "app.asar";
 
         if (path.find(needle) != std::string::npos) {
