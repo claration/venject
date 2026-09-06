@@ -1,11 +1,25 @@
-#include "linux.hpp"
+
+
+#include "paths.hpp"
+
+#ifdef __APPLE__
+#error "Apple is not supported"
+#elif defined(__linux__)
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream> // std::ofstream
+#include <unistd.h> // readlink
+#include <limits.h> // PATH_MAX, setbuffer
+
+#include "../globals.h"
 
 namespace fs = std::filesystem;
 
-std::vector<DiscordInstall> FindDiscords() {
+namespace paths {
+
+std::vector<DiscordInstall> FindDiscords() 
+{
     std::vector<DiscordInstall> result;
 
     const fs::path home = std::getenv("HOME");
@@ -159,34 +173,46 @@ std::vector<DiscordInstall> FindDiscords() {
     return result;
 }
 
-fs::path DistPath() {
-	const fs::path home = std::getenv("HOME");
-    return (home / ".config/Vencord/dist");
-}
-
-fs::path PatcherPath()
+fs::path ModDistPath() 
 {
-    return DistPath() / "patcher.js";
+    auto xdg = std::getenv("XDG_CONFIG_HOME");
+    auto home = fs::path(std::getenv("HOME")) / ".config";
+
+    fs::path path = xdg ? xdg : home;
+    path /= MOD_NAME;
+    path /= "dist";
+
+    fs::create_directories(path);
+	
+	auto package_json = path / "package.json";
+    if (!fs::exists(package_json))
+        std::ofstream(package_json) << "{}";
+
+    return path;
 }
 
-#include <unistd.h>
-#include <limits.h>
+fs::path ModEntrypointPath()
+{
+    return ModDistPath() / "patcher.js";
+}
 
-fs::path ExecutablePath()
+fs::path OurExecutablePath()
 {
     char buffer[PATH_MAX];
 
     const auto len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-
-    if (len == -1)
-        return {};
+    if (len == -1) return {};
 
     buffer[len] = '\0';
 
     return fs::path(buffer);
 }
 
-fs::path HookPath()
+fs::path OurHookLibraryPath()
 {
-    return ExecutablePath().parent_path() / "libvencord_hook.so";
+    return OurExecutablePath().parent_path() / "libvencord_hook.so";
 }
+
+}
+
+#endif // __LINUX__

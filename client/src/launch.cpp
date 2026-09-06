@@ -1,6 +1,4 @@
 #include "launch.hpp"
-#include "paths/linux.hpp"
-#include "dl.hpp"
 
 #include <QProcess>
 #include <QProcessEnvironment>
@@ -9,13 +7,16 @@
 #include <QJsonDocument>
 #include <QStringList>
 
+#include "paths/paths.hpp"
+#include "network.hpp"
+
 Launcher::Launcher(QObject* parent): QObject(parent){}
 
 void Launcher::launch(
 	const QString& path, 		// discord executable
 	const QStringList& args, 	// discord args (-o)
-	const QStringList& argv 	// mod loader full argv
-) {
+	const QStringList& argv) 	// mod loader full argv 
+{
 	QJsonArray jsonArgs;
 
     for (const auto& arg : argv)
@@ -26,11 +27,11 @@ void Launcher::launch(
 	// TODO: fix relaunches with GUI
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
-	environment.insert("MODLOADER_MOD_ENTRYPOINT", QString::fromStdString(PatcherPath().string()));
-	environment.insert("MODLOADER_EXECUTABLE", QString::fromStdString(ExecutablePath().string()));
+	environment.insert("MODLOADER_MOD_ENTRYPOINT", QString::fromStdString(paths::ModEntrypointPath().string()));
+	environment.insert("MODLOADER_EXECUTABLE", QString::fromStdString(paths::OurExecutablePath().string()));
 	environment.insert("MODLOADER_PROCESS_ARGV", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
 	environment.insert("MODLOADER_WM_CLASS", QString::fromStdString("vencord-canary"));
-	environment.insert("LD_PRELOAD", QString::fromStdString(HookPath().string()));
+	environment.insert("LD_PRELOAD", QString::fromStdString(paths::OurHookLibraryPath().string()));
 
     process.setProcessEnvironment(environment);
     process.setProgram(path);
@@ -42,7 +43,7 @@ QVariantList Launcher::findDiscords()
 {
     QVariantList discordList;
 
-    for (const auto& discord : FindDiscords()) {
+    for (const auto& discord : paths::FindDiscords()) {
         QVariantMap item;
 
         item["path"] = QString::fromStdString(discord.path.string());
@@ -59,18 +60,23 @@ QVariantList Launcher::findDiscords()
 
 QVariantMap Launcher::checkForUpdates()
 {
-    const auto info = CheckForUpdates();
+    const auto result = network::CheckForUpdates();
 
     return {
-        {"latestHash", info.latestHash},
-        {"installedHash", info.installedHash},
-        {"upToDate", info.upToDate}
+        {"success", result.success},
+        {"error", result.error},
+        {"latestHash", result.latestHash},
+        {"installedHash", result.installedHash},
+        {"upToDate", result.upToDate}
     };
 }
 
-bool Launcher::updateVencord()
+QVariantMap Launcher::updateVencord()
 {
-    return DownloadLatest(
-        QDir::home().filePath(".config/Vencord/dist")
-    );
+    const auto result = network::DownloadLatest();
+
+    return {
+        {"success", result.success},
+        {"error", result.error}
+    };
 }

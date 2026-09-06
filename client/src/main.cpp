@@ -17,7 +17,8 @@
 
 #include "launch.hpp"
 
-void print_usage(char* argv) {
+void print_usage(char* argv) 
+{
 	printf(
 		"Usage: %s [OPTIONS]\n\n"
 		"  -h, --help       Print usage information\n"

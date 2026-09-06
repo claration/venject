@@ -6,7 +6,6 @@ ApplicationWindow {
     id: root
 
     property var discordList: launcher.findDiscords()
-    property string pendingLaunchPath: ""
 
     visible: true
     width: 600
@@ -15,38 +14,56 @@ ApplicationWindow {
     title: "Vencord Launcher"
 
     onActiveChanged: {
-        if (active) {
-            discordList = launcher.findDiscords()
-        }
+        if (active) discordList = launcher.findDiscords()
     }
 
-	MessageDialog {
-		id: updateDialog
+    MessageDialog {
+        id: errorDialog
 
-		title: "Vencord Update Available"
-		text: "A new version of Vencord is available.\n\n" +
-			"Installed: " + updateInstalledHash + "\n" +
-			"Latest: " + updateLatestHash + "\n\n" +
-			"Would you like to update before launching?"
+        title: "Vencord Launcher"
+        buttons: MessageDialog.Ok
 
-		buttons: MessageDialog.Yes | MessageDialog.No
+        property string errorMessage: ""
 
-		property string launchPath: ""
-		property string updateInstalledHash: ""
-		property string updateLatestHash: ""
+        text: errorMessage
+    }
 
-		onAccepted: {
-			if (launcher.updateVencord()) {
-				launcher.launch(launchPath)
-			} else {
-				console.log("failed")
-			}
-		}
+    MessageDialog {
+        id: updateDialog
 
-		onRejected: {
-			launcher.launch(launchPath)
-		}
-	}
+        title: "Vencord Update Available"
+
+        buttons: MessageDialog.Yes | MessageDialog.No
+
+        property string launchPath: ""
+        property string updateInstalledHash: ""
+        property string updateLatestHash: ""
+
+        text:
+            "A new version of Vencord is available.\n\n" +
+            "Installed: " + updateInstalledHash + "\n" +
+            "Latest: " + updateLatestHash + "\n\n" +
+            "Would you like to update before launching?"
+
+        onAccepted: {
+            const result = launcher.updateVencord()
+
+            if (!result.success) {
+                errorDialog.errorMessage =
+                    "Failed to update Vencord.\n\n" +
+                    result.error
+
+                errorDialog.open()
+                return
+            }
+
+            launcher.launch(launchPath)
+        }
+
+        onRejected: {
+            launcher.launch(launchPath)
+        }
+    }
 
     ListView {
         id: listView
@@ -74,32 +91,43 @@ ApplicationWindow {
 
                     anchors.verticalCenter: parent.verticalCenter
 
-                    source: modelData.branch.toLowerCase() === "discord canary"
-                        ? "qrc:/samaraqt/resources/canary.webp"
-                        : "qrc:/samaraqt/resources/stable.webp"
+                    source:
+                        modelData.branch.toLowerCase() === "discord canary"
+                            ? "qrc:/samaraqt/resources/canary.webp"
+                            : "qrc:/samaraqt/resources/stable.webp"
 
                     fillMode: Image.PreserveAspectFit
                 }
 
                 Column {
-                    width: parent.width - 44 - launchButton.width - 24
-                    anchors.verticalCenter: parent.verticalCenter
+                    width:
+                        parent.width -
+                        44 -
+                        launchButton.width -
+                        24
 
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 2
 
                     Label {
                         width: parent.width
+
                         text: modelData.branch
+
                         font.bold: true
                         font.pixelSize: 14
+
                         elide: Text.ElideRight
                     }
 
                     Label {
                         width: parent.width
+
                         text: modelData.path
+
                         color: "#888"
                         font.pixelSize: 11
+
                         elide: Text.ElideMiddle
                     }
                 }
@@ -114,25 +142,29 @@ ApplicationWindow {
 
                     text: "Launch"
 
-					onClicked: {
-						const update = launcher.checkForUpdates()
+                    onClicked: {
+                        const result = launcher.checkForUpdates()
 
-						if (update.latestHash === "Unknown") {
-							launcher.launch(modelData.path)
-							return
-						}
+                        if (!result.success) {
+                            errorDialog.errorMessage =
+                                "Failed to check for Vencord updates.\n\n" +
+                                result.error
 
-						if (update.upToDate) {
-							launcher.launch(modelData.path)
-							return
-						}
+                            errorDialog.open()
+                            return
+                        }
 
-						updateDialog.launchPath = modelData.path
-						updateDialog.updateInstalledHash = update.installedHash
-						updateDialog.updateLatestHash = update.latestHash
-						updateDialog.open()
-					}
+                        if (result.upToDate) {
+                            launcher.launch(modelData.path)
+                            return
+                        }
 
+                        updateDialog.launchPath = modelData.path
+                        updateDialog.updateInstalledHash = result.installedHash
+                        updateDialog.updateLatestHash = result.latestHash
+
+                        updateDialog.open()
+                    }
                 }
             }
         }

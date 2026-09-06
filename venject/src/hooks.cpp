@@ -1,8 +1,6 @@
 #ifdef __APPLE__
 #error "Apple is not supported"
-#endif
-
-#ifdef __linux__
+#elif defined(__linux__)
 
 #include <cstdarg> // va
 #include <string>

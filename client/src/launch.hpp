@@ -16,5 +16,5 @@ public:
     Q_INVOKABLE void launch(const QString& path, const QStringList& args = {}, const QStringList& argv = {});
     Q_INVOKABLE QVariantList findDiscords();
 	Q_INVOKABLE QVariantMap checkForUpdates();
-	Q_INVOKABLE bool updateVencord();
+	Q_INVOKABLE QVariantMap updateVencord();
 };

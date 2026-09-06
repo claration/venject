@@ -6,6 +6,8 @@
 
 namespace fs = std::filesystem;
 
+namespace paths {
+
 struct DiscordInstall {
     std::filesystem::path path;
     std::string branch;
@@ -15,7 +17,9 @@ struct DiscordInstall {
 };
 
 std::vector<DiscordInstall> FindDiscords();
-fs::path DistPath();
-fs::path PatcherPath();
-fs::path ExecutablePath();
-fs::path HookPath();
+fs::path ModDistPath();
+fs::path ModEntrypointPath();
+fs::path OurExecutablePath();
+fs::path OurHookLibraryPath();
+
+}

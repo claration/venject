@@ -24,8 +24,8 @@ qt_standard_project_setup()
 qt_add_executable(${PROJECT_NAME}
     src/main.cpp
     src/launch.cpp
-    src/dl.cpp
-    src/paths/linux.cpp
+    src/network.cpp
+    src/paths/paths.cpp
 )
 
 qt_add_qml_module(${PROJECT_NAME}
