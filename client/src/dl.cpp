@@ -126,12 +126,21 @@ UpdateInfo CheckForUpdates()
 
 bool WritePackageJson(const QString& outputDir)
 {
-    QFile file(
-        QDir(outputDir).filePath("package.json")
-    );
+    QDir dir(outputDir);
 
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    if (!dir.exists() && !dir.mkpath(".")) {
+        qDebug() << "Failed to create output directory:"
+                 << outputDir;
         return false;
+    }
+
+    QFile file(dir.filePath("package.json"));
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qDebug() << "Failed to create:"
+                 << file.fileName();
+        return false;
+    }
 
     return file.write("{}") == 2;
 }
