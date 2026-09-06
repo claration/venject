@@ -40,6 +40,8 @@ qt_add_qml_module(${PROJECT_NAME}
         resources/stable.webp
 )
 
+include(cmake/Git.cmake)
+
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )

@@ -22,14 +22,14 @@ T resolve(const char* name) {
 }
 
 using uv_fs_lstat_t = int (*)(const void*, const void*, const char*, void*);
-using xstat64_t = int (*)(int, const char*, struct stat64*);
-using open64_t = int (*)(const char*, int, ...);
-using openat64_t = int (*)(int, const char*, int, ...);
+using xstat64_t 	= int (*)(int, const char*, struct stat64*);
+using open64_t 		= int (*)(const char*, int, ...);
+using openat64_t 	= int (*)(int, const char*, int, ...);
 
-uv_fs_lstat_t original_uv_fs_lstat = nullptr;
-xstat64_t original_xstat64 = nullptr;
-open64_t original_open64 = nullptr;
-openat64_t original_openat64 = nullptr;
+uv_fs_lstat_t 	original_uv_fs_lstat 	= nullptr;
+xstat64_t 		original_xstat64 		= nullptr;
+open64_t 		original_open64 		= nullptr;
+openat64_t 		original_openat64 		= nullptr;
 
 int uv_fs_lstat(const void* loop, const void* req, const char* path, void* buf) 
 {

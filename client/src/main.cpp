@@ -54,6 +54,8 @@ void parse_arguments(int argc, char* argv[])
                 exit(0);
             case 'v':
                 printf("%s\n", argv[0]);
+				printf("%s (%s)\n", GIT_HASH, GIT_BRANCH);
+                printf("Git: %s\n", GIT_URL);
                 printf("Compiled on %s at %s\n", __DATE__, __TIME__);
                 exit(0);
             case 'l':
