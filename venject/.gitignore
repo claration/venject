@@ -1,0 +1,4 @@
+embedded/app.asar
+scripts/asar_pack
+src/gen
+test.sh

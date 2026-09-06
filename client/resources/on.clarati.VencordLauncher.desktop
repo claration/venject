@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Vencord Launcher
+Comment=Easily use Vencord with Discord
+Categories=Utility;
+Icon=on.clarati.VencordLauncher
+Exec=samaraqt
+Terminal=false
+StartupWMClass=on.clarati.VencordLauncher

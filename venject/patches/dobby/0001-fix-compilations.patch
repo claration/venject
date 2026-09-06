@@ -1,0 +1,765 @@
+From ce6bd79318f052900c3dd7adf0d493cc7007ac86 Mon Sep 17 00:00:00 2001
+From: lammmab <liamlam8282@gmail.com>
+Date: Tue, 2 Jun 2026 23:51:46 -0400
+Subject: [PATCH 1/7] Fix Dobby on POSIX
+
+---
+ CMakeLists.txt                                               | 1 +
+ external/logging/logging.cc                                  | 1 +
+ source/Backend/UserMode/ExecMemory/code-patch-tool-posix.cc  | 1 -
+ source/Backend/UserMode/PlatformUtil/Linux/ProcessRuntime.cc | 4 +++-
+ source/PlatformUtil/ProcessRuntime.h                         | 1 +
+ 5 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5328d187..4d627b7d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,6 +1,7 @@
+ cmake_minimum_required(VERSION 3.5)
+ project(Dobby)
+ enable_language(ASM)
++set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -x assembler-with-cpp")
+ 
+ include(cmake/Util.cmake)
+ include(cmake/Macros.cmake)
+diff --git a/external/logging/logging.cc b/external/logging/logging.cc
+index 86ead3d9..52f95283 100644
+--- a/external/logging/logging.cc
++++ b/external/logging/logging.cc
+@@ -8,6 +8,7 @@
+ #include <time.h>
+ 
+ #if defined(__linux__) || defined(__APPLE__)
++#include <sys/time.h>
+ #include <unistd.h>
+ #include <syslog.h>
+ #include <errno.h>
+diff --git a/source/Backend/UserMode/ExecMemory/code-patch-tool-posix.cc b/source/Backend/UserMode/ExecMemory/code-patch-tool-posix.cc
+index bfe7361b..e5098f22 100644
+--- a/source/Backend/UserMode/ExecMemory/code-patch-tool-posix.cc
++++ b/source/Backend/UserMode/ExecMemory/code-patch-tool-posix.cc
+@@ -1,6 +1,5 @@
+ 
+ #include "dobby/dobby_internal.h"
+-#include "core/arch/Cpu.h"
+ 
+ #include <unistd.h>
+ #include <sys/mman.h>
+diff --git a/source/Backend/UserMode/PlatformUtil/Linux/ProcessRuntime.cc b/source/Backend/UserMode/PlatformUtil/Linux/ProcessRuntime.cc
+index 776d25e7..27dbd74f 100644
+--- a/source/Backend/UserMode/PlatformUtil/Linux/ProcessRuntime.cc
++++ b/source/Backend/UserMode/PlatformUtil/Linux/ProcessRuntime.cc
+@@ -11,10 +11,12 @@
+ #include <vector>
+ #include <algorithm>
+ 
++#ifndef LINE_MAX
+ #define LINE_MAX 2048
++#endif
+ 
+ static bool memory_region_comparator(MemRange a, MemRange b) {
+-  return (a.start < b.start);
++  return (a.start() < b.start());
+ }
+ 
+ stl::vector<MemRegion> regions;
+diff --git a/source/PlatformUtil/ProcessRuntime.h b/source/PlatformUtil/ProcessRuntime.h
+index 1650cadb..23e0d3ff 100644
+--- a/source/PlatformUtil/ProcessRuntime.h
++++ b/source/PlatformUtil/ProcessRuntime.h
+@@ -4,6 +4,7 @@
+ #include "PlatformUnifiedInterface/platform.h"
+ 
+ struct RuntimeModule {
++  void *load_address;
+   void *base;
+   char path[1024];
+ };
+
+From ad9a99cc00ff2e120d8692822245924fe0561643 Mon Sep 17 00:00:00 2001
+From: lammmab <liamlam8282@gmail.com>
+Date: Wed, 3 Jun 2026 09:29:31 -0400
+Subject: [PATCH 2/7] Fix various Windows-specific bugs and cross-compilation
+ problems
+
+---
+ CMakeLists.txt                                | 13 +++--
+ .../pe/dobby_symbol_resolver.cc               |  2 +-
+ external/logging/logging.cc                   | 10 ++++
+ .../ExecMemory/code-patch-tool-windows.cc     |  4 +-
+ .../PlatformUtil/Windows/ProcessRuntime.cc    | 14 ++---
+ .../UnifiedInterface/platform-windows.cc      | 56 +++++--------------
+ ...ridge_arm64.asm => closure_bridge_arm64.S} |  0
+ ...e_arm64.asm => closure_trampoline_arm64.S} |  0
+ ...re_bridge_x64.asm => closure_bridge_x64.S} |  2 +-
+ ...oline_x64.asm => closure_trampoline_x64.S} |  2 +-
+ 10 files changed, 44 insertions(+), 59 deletions(-)
+ rename source/TrampolineBridge/ClosureTrampolineBridge/arm64/{closure_bridge_arm64.asm => closure_bridge_arm64.S} (100%)
+ rename source/TrampolineBridge/ClosureTrampolineBridge/arm64/{closure_trampoline_arm64.asm => closure_trampoline_arm64.S} (100%)
+ rename source/TrampolineBridge/ClosureTrampolineBridge/x64/{closure_bridge_x64.asm => closure_bridge_x64.S} (96%)
+ rename source/TrampolineBridge/ClosureTrampolineBridge/x64/{closure_trampoline_x64.asm => closure_trampoline_x64.S} (85%)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5328d187..c1addfe1 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -145,8 +145,8 @@ set(dobby.SOURCE_FILE_LIST ${dobby.SOURCE_FILE_LIST}
+   source/TrampolineBridge/ClosureTrampolineBridge/arm64/helper_arm64.cc
+   source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.cc
+   source/TrampolineBridge/ClosureTrampolineBridge/arm64/ClosureTrampolineARM64.cc
+-  source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.asm
+-  source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_trampoline_arm64.asm
++  source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S
++  source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_trampoline_arm64.S
+   # closure trampoline bridge - x86
+   source/TrampolineBridge/ClosureTrampolineBridge/x86/helper_x86.cc
+   source/TrampolineBridge/ClosureTrampolineBridge/x86/closure_bridge_x86.cc
+@@ -155,8 +155,8 @@ set(dobby.SOURCE_FILE_LIST ${dobby.SOURCE_FILE_LIST}
+   source/TrampolineBridge/ClosureTrampolineBridge/x64/helper_x64.cc
+   source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.cc
+   source/TrampolineBridge/ClosureTrampolineBridge/x64/ClosureTrampolineX64.cc
+-  source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.asm
+-  source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.asm
++  source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.S
++  source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.S
+ 
+   # plugin register
+ 
+@@ -238,8 +238,9 @@ add_subdirectory(external/logging)
+ get_target_property(logging.SOURCE_FILE_LIST logging SOURCES)
+ 
+ # add osbase library
+-add_subdirectory(external/osbase)
+-
++if(NOT WIN32)
++  add_subdirectory(external/osbase)
++endif()
+ # ---
+ 
+ if (Plugin.SymbolResolver)
+diff --git a/builtin-plugin/SymbolResolver/pe/dobby_symbol_resolver.cc b/builtin-plugin/SymbolResolver/pe/dobby_symbol_resolver.cc
+index 43a10133..db2c63f1 100644
+--- a/builtin-plugin/SymbolResolver/pe/dobby_symbol_resolver.cc
++++ b/builtin-plugin/SymbolResolver/pe/dobby_symbol_resolver.cc
+@@ -17,7 +17,7 @@ PUBLIC void *DobbySymbolResolver(const char *image_name, const char *symbol_name
+   void *result = NULL;
+ 
+   HMODULE hMod = LoadLibraryExA(image_name, NULL, DONT_RESOLVE_DLL_REFERENCES);
+-  result = GetProcAddress(hMod, symbol_name_pattern);
++  result = (void*)GetProcAddress(hMod, symbol_name_pattern);
+   if (result)
+     return result;
+ 
+diff --git a/external/logging/logging.cc b/external/logging/logging.cc
+index 86ead3d9..aeb7915a 100644
+--- a/external/logging/logging.cc
++++ b/external/logging/logging.cc
+@@ -25,6 +25,7 @@
+ #endif
+ 
+ #if defined(_WIN32)
++#include <windows.h>
+ #define PUBLIC
+ #else
+ #define PUBLIC __attribute__((visibility("default")))
+@@ -54,7 +55,16 @@ void Logger::logv(LogLevel level, const char *in_fmt, va_list ap) {
+ 
+   if (enable_time_tag_) {
+     struct timeval tv;
++#if defined(_WIN32)
++    FILETIME ft;
++    GetSystemTimeAsFileTime(&ft);
++    ULONGLONG t = ((ULONGLONG)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
++    t -= 116444736000000000ULL; // epoch difference: 1601->1970
++    tv.tv_sec  = (long)(t / 10000000ULL);
++    tv.tv_usec = (long)((t % 10000000ULL) / 10);
++#else
+     gettimeofday(&tv, NULL);
++#endif
+     time_t now = tv.tv_sec;
+     struct tm *tm = localtime(&now);
+     snprintf(fmt_buffer + strlen(fmt_buffer), sizeof(fmt_buffer) - strlen(fmt_buffer),
+diff --git a/source/Backend/UserMode/ExecMemory/code-patch-tool-windows.cc b/source/Backend/UserMode/ExecMemory/code-patch-tool-windows.cc
+index 471a4672..2f8a67c3 100644
+--- a/source/Backend/UserMode/ExecMemory/code-patch-tool-windows.cc
++++ b/source/Backend/UserMode/ExecMemory/code-patch-tool-windows.cc
+@@ -16,12 +16,12 @@ PUBLIC int DobbyCodePatch(void *address, uint8_t *buffer, uint32_t buffer_size)
+   void *addressPageAlign = (void *)ALIGN(address, page_size);
+ 
+   if (!VirtualProtect(addressPageAlign, page_size, PAGE_EXECUTE_READWRITE, &oldProtect))
+-    return kMemoryOperationError;
++    return -1;
+ 
+   memcpy(address, buffer, buffer_size);
+ 
+   if (!VirtualProtect(addressPageAlign, page_size, oldProtect, &oldProtect))
+-    return kMemoryOperationError;
++    return -1;
+ 
+   return 0;
+ }
+diff --git a/source/Backend/UserMode/PlatformUtil/Windows/ProcessRuntime.cc b/source/Backend/UserMode/PlatformUtil/Windows/ProcessRuntime.cc
+index 8e3176c1..47d321fb 100755
+--- a/source/Backend/UserMode/PlatformUtil/Windows/ProcessRuntime.cc
++++ b/source/Backend/UserMode/PlatformUtil/Windows/ProcessRuntime.cc
+@@ -7,13 +7,13 @@
+ #define LINE_MAX 2048
+ 
+ static bool memory_region_comparator(MemRange a, MemRange b) {
+-  return (a.address > b.address);
++  return (a.addr() > b.addr());
+ }
+ 
+ // https://gist.github.com/jedwardsol/9d4fe1fd806043a5767affbd200088ca
+ 
+-stl::vector<MemRange> ProcessMemoryLayout;
+-stl::vector<MemRange> ProcessRuntime::getMemoryLayout() {
++stl::vector<MemRegion> ProcessMemoryLayout;
++const stl::vector<MemRegion>& ProcessRuntime::getMemoryLayout() {
+   if (!ProcessMemoryLayout.empty()) {
+     ProcessMemoryLayout.clear();
+   }
+@@ -50,16 +50,16 @@ stl::vector<MemRange> ProcessRuntime::getMemoryLayout() {
+       break;
+     }
+ 
+-    ProcessMemoryLayout.push_back(MemRange{(void *)region.BaseAddress, region.RegionSize, permission});
++    ProcessMemoryLayout.push_back(MemRegion{(addr_t)region.BaseAddress, region.RegionSize, (int)permission});
+   }
+   return ProcessMemoryLayout;
+ }
+ 
+ stl::vector<RuntimeModule> ProcessModuleMap;
+ 
+-stl::vector<RuntimeModule> ProcessRuntime::getModuleMap() {
+-  if (!ProcessMemoryLayout.empty()) {
+-    ProcessMemoryLayout.clear();
++const stl::vector<RuntimeModule>& ProcessRuntime::getModuleMap() {
++  if (!ProcessModuleMap.empty()) {
++    ProcessModuleMap.clear();
+   }
+   return ProcessModuleMap;
+ }
+diff --git a/source/Backend/UserMode/UnifiedInterface/platform-windows.cc b/source/Backend/UserMode/UnifiedInterface/platform-windows.cc
+index 30af5b84..7133f36c 100644
+--- a/source/Backend/UserMode/UnifiedInterface/platform-windows.cc
++++ b/source/Backend/UserMode/UnifiedInterface/platform-windows.cc
+@@ -1,26 +1,15 @@
+ #include <stdio.h>
+-
+ #include <windows.h>
+-
+ #include "logging/logging.h"
+ #include "logging/check_logging.h"
+ #include "PlatformUnifiedInterface/platform.h"
+ 
+-int GetProtectionFromMemoryPermission(MemoryPermission access) {
++static int GetProtectionFromMemoryPermission(MemoryPermission access) {
+   if (kReadWriteExecute == access)
+     return PAGE_EXECUTE_READWRITE;
+   else if (kReadExecute == access)
+     return PAGE_EXECUTE_READ;
+-}
+-
+-int OSMemory::AllocPageSize() {
+-  static int lastRet = -1;
+-  if (lastRet == -1) {
+-    SYSTEM_INFO si;
+-    GetSystemInfo(&si);
+-    lastRet = si.dwAllocationGranularity; // should be used with VirtualAlloc(MEM_RESERVE)
+-  }
+-  return lastRet;
++  return PAGE_NOACCESS;
+ }
+ 
+ int OSMemory::PageSize() {
+@@ -28,52 +17,37 @@ int OSMemory::PageSize() {
+   if (lastRet == -1) {
+     SYSTEM_INFO si;
+     GetSystemInfo(&si);
+-    lastRet = si.dwPageSize; // should be used with VirtualAlloc(MEM_RESERVE)
++    lastRet = si.dwPageSize;
+   }
+   return lastRet;
+ }
+ 
+-void *OSMemory::Allocate(void *address, int size, MemoryPermission access) {
+-  DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % AllocPageSize());
+-  DCHECK_EQ(0, size % PageSize());
+-
+-  void *result = VirtualAlloc(address, size, MEM_COMMIT | MEM_RESERVE, PAGE_NOACCESS);
+-  OSMemory::SetPermission(result, size, kReadWriteExecute);
++void *OSMemory::Allocate(size_t size, MemoryPermission access, void *fixed_addr) {
++  void *result = VirtualAlloc(fixed_addr, size, MEM_COMMIT | MEM_RESERVE, PAGE_NOACCESS);
+   if (result == nullptr)
+     return nullptr;
+-
+-  // TODO: if need align
+-  void *aligned_base = result;
+-  return static_cast<void *>(aligned_base);
++  OSMemory::SetPermission(result, size, access);
++  return result;
+ }
+ 
+-// static
+-bool OSMemory::Free(void *address, const int size) {
+-  DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % PageSize());
+-  DCHECK_EQ(0, size % PageSize());
+-
+-  return VirtualFree(address, size, MEM_RELEASE);
++void *OSMemory::Allocate(size_t size, MemoryPermission access) {
++  return OSMemory::Allocate(size, access, nullptr);
+ }
+ 
+-bool OSMemory::Release(void *address, int size) {
+-  DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % PageSize());
+-  DCHECK_EQ(0, size % PageSize());
++bool OSMemory::Free(void *address, size_t size) {
++  return VirtualFree(address, 0, MEM_RELEASE);
++}
+ 
++bool OSMemory::Release(void *address, size_t size) {
+   return OSMemory::Free(address, size);
+ }
+ 
+-bool OSMemory::SetPermission(void *address, int size, MemoryPermission access) {
+-  DCHECK_EQ(0, reinterpret_cast<uintptr_t>(address) % PageSize());
+-  DCHECK_EQ(0, size % PageSize());
+-
++bool OSMemory::SetPermission(void *address, size_t size, MemoryPermission access) {
+   int prot = GetProtectionFromMemoryPermission(access);
+-
+   DWORD oldProtect;
+   return VirtualProtect(address, size, prot, &oldProtect);
+ }
+ 
+-// =====
+-
+ void OSPrint::Print(const char *format, ...) {
+   va_list args;
+   va_start(args, format);
+@@ -83,4 +57,4 @@ void OSPrint::Print(const char *format, ...) {
+ 
+ void OSPrint::VPrint(const char *format, va_list args) {
+   vprintf(format, args);
+-}
++}
+\ No newline at end of file
+diff --git a/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.asm b/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S
+similarity index 100%
+rename from source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.asm
+rename to source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S
+diff --git a/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_trampoline_arm64.asm b/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_trampoline_arm64.S
+similarity index 100%
+rename from source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_trampoline_arm64.asm
+rename to source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_trampoline_arm64.S
+diff --git a/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.asm b/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.S
+similarity index 96%
+rename from source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.asm
+rename to source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.S
+index 5784e6f2..ccea1999 100644
+--- a/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.asm
++++ b/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_bridge_x64.S
+@@ -1,5 +1,5 @@
+ #if defined(__x86_64__)
+-#if defined(__WIN32__) || defined(__APPLE__)
++#if defined(__APPLE__) || (defined(__WIN32__) && !defined(__x86_64__))
+ #define cdecl(s) _##s
+ #else
+ #define cdecl(s) s
+diff --git a/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.asm b/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.S
+similarity index 85%
+rename from source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.asm
+rename to source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.S
+index 391875e3..987482a2 100644
+--- a/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.asm
++++ b/source/TrampolineBridge/ClosureTrampolineBridge/x64/closure_trampoline_x64.S
+@@ -1,5 +1,5 @@
+ #if defined(__x86_64__)
+-#if defined(__WIN32__) || defined(__APPLE__)
++#if defined(__APPLE__) || (defined(__WIN32__) && !defined(__x86_64__))
+ #define cdecl(s) _##s
+ #else
+ #define cdecl(s) s
+
+From 4b71e19b5f234750254980791be1bbf9ad297b66 Mon Sep 17 00:00:00 2001
+From: Liam <97703200+lammmab@users.noreply.github.com>
+Date: Wed, 3 Jun 2026 18:01:12 +0000
+Subject: [PATCH 3/7] HOTFIX: Undefined macros on GCC
+
+---
+ common/os_arch_features.h | 4 ++++
+ common/pac_kit.h          | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/common/os_arch_features.h b/common/os_arch_features.h
+index ee0586de..9833dec3 100644
+--- a/common/os_arch_features.h
++++ b/common/os_arch_features.h
+@@ -6,6 +6,10 @@
+ 
+ #include "PlatformUnifiedInterface/platform.h"
+ 
++#ifndef __has_feature
++#define __has_feature(x) 0
++#endif
++
+ #if defined(__arm64e__) && __has_feature(ptrauth_calls)
+ #include <ptrauth.h>
+ #endif
+diff --git a/common/pac_kit.h b/common/pac_kit.h
+index ffa2c4dd..c4d7fe12 100644
+--- a/common/pac_kit.h
++++ b/common/pac_kit.h
+@@ -4,6 +4,10 @@
+ #include <sys/types.h>
+ #include <stddef.h>
+ 
++#ifndef __has_feature
++#define __has_feature(x) 0
++#endif
++
+ #if defined(__arm64e__) || __has_feature(ptrauth_calls)
+ #include <ptrauth.h>
+ #endif
+
+From f33102981ab809b1362d3b03e0c527c92e1d3a8f Mon Sep 17 00:00:00 2001
+From: lammmab <liamlam8282@gmail.com>
+Date: Wed, 3 Jun 2026 19:50:05 -0400
+Subject: [PATCH 4/7] fix: handle SSE instructions in x86 decoder instead of
+ crashing
+
+---
+ .../x86/x86_insn_decode/x86_insn_decode.c                     | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/source/InstructionRelocation/x86/x86_insn_decode/x86_insn_decode.c b/source/InstructionRelocation/x86/x86_insn_decode/x86_insn_decode.c
+index 5b8fc32a..40b788b1 100644
+--- a/source/InstructionRelocation/x86/x86_insn_decode/x86_insn_decode.c
++++ b/source/InstructionRelocation/x86/x86_insn_decode/x86_insn_decode.c
+@@ -447,7 +447,9 @@ static void x86_insn_decode_opcode(x86_insn_reader_t *rd, x86_insn_decode_t *ins
+ 
+   // check sse group
+   if (X86_INSN_FLAG_GET_GROUP(insn_spec.flags) > X86_INSN_SSE_GROUP_START) {
+-    UNIMPLEMENTED();
++    insn->primary_opcode = opcode;
++    insn->insn_spec = insn_spec;
++    return;
+   }
+ 
+   if (X86_INSN_FLAG_GET_GROUP(insn_spec.flags) > X86_INSN_GROUP_START &&
+
+From 63788a5a678bc01677ca0c7e25c79b0cdb3fbaa6 Mon Sep 17 00:00:00 2001
+From: lammmab <liamlam8282@gmail.com>
+Date: Thu, 4 Jun 2026 10:11:15 -0400
+Subject: [PATCH 5/7] Proper BUILD_SHARED_LIBS for Dobby; minimum CMake bumped
+ to 3.13
+
+---
+ CMakeLists.txt | 63 +++++++++++++++-----------------------------------
+ 1 file changed, 18 insertions(+), 45 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c1addfe1..cf7dc45b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.5)
++cmake_minimum_required(VERSION 3.13)
+ project(Dobby)
+ enable_language(ASM)
+ 
+@@ -32,6 +32,8 @@ option(DOBBY_BUILD_EXAMPLE "Build example" OFF)
+ 
+ option(DOBBY_BUILD_TEST "Build test" OFF)
+ 
++option(BUILD_SHARED_LIBS "Build as a shared library" OFF)
++
+ # --- private
+ option(DOBBY_BUILD_KERNEL_MODE "Build xnu kernel mode" OFF)
+ 
+@@ -74,6 +76,7 @@ message(STATUS "[Dobby] Plugin.SymbolResolver: ${Plugin.SymbolResolver}")
+ message(STATUS "[Dobby] Plugin.ImportTableReplace: ${Plugin.ImportTableReplace}")
+ message(STATUS "[Dobby] Plugin.Android.BionicLinkerUtil: ${Plugin.Android.BionicLinkerUtil}")
+ message(STATUS "[Dobby] DOBBY_BUILD_EXAMPLE: ${DOBBY_BUILD_EXAMPLE}")
++message(STATUS "[Dobby] BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+ message(STATUS "[Dobby] DOBBY_BUILD_TEST: ${DOBBY_BUILD_TEST}")
+ message(STATUS "[Dobby] DOBBY_BUILD_KERNEL_MODE: ${DOBBY_BUILD_KERNEL_MODE}")
+ message(STATUS "[Dobby] Private.Obfuscation: ${Private.Obfuscation}")
+@@ -290,56 +293,30 @@ set(SOURCE_FILE_LIST
+ get_absolute_path_list(SOURCE_FILE_LIST SOURCE_FILE_LIST_)
+ set(SOURCE_FILE_LIST ${SOURCE_FILE_LIST_})
+ 
+-add_library(dobby SHARED
+-  ${SOURCE_FILE_LIST}
+-  )
++if (BUILD_SHARED_LIBS)
++  add_library(dobby SHARED ${SOURCE_FILE_LIST})
++else ()
++  add_library(dobby STATIC ${SOURCE_FILE_LIST})
++endif ()
++add_library(dobby::dobby ALIAS dobby)
+ 
+-target_include_directories(dobby PUBLIC
+-  include
+-  )
++target_include_directories(dobby PUBLIC include)
+ 
+ # ---
+ 
+-add_library(dobby_static STATIC
+-  ${SOURCE_FILE_LIST}
+-  )
+-
+-target_include_directories(dobby_static PUBLIC
+-  include
+-  )
+-
+-set_target_properties(dobby_static
+-  PROPERTIES OUTPUT_NAME "dobby"
+-  )
++if (Private.Obfuscation)
++  set(linker_flags "${linker_flags} -Wl,-mllvm -Wl,-obfuscator-conf=all")
++endif ()
+ 
+ # ---
+ 
+-set_target_properties(dobby
+-  PROPERTIES
+-  LINK_FLAGS "${linker_flags}"
+-  COMPILE_FLAGS "${compiler_flags}"
+-  )
+-
+-set_target_properties(dobby_static
+-  PROPERTIES
+-  COMPILE_FLAGS "${compiler_flags}"
+-  )
++set_target_properties(dobby PROPERTIES COMPILE_FLAGS "${compiler_flags}")
++target_link_options(dobby PRIVATE $<$<BOOL:${BUILD_SHARED_LIBS}>:${linker_flags}>)
+ 
+ target_compile_definitions(dobby PRIVATE
+   "COMPILE_DEFINITIONS ${compile_definitions}"
+-  -DBUILD_WITH_TRAMPOLINE_ASM
+-  )
+-target_compile_definitions(dobby_static PRIVATE
+-  "COMPILE_DEFINITIONS ${compile_definitions}"
+-  )
+-
+-# ---
+-
+-if (Private.Obfuscation)
+-  set(linker_flags "${linker_flags} -Wl,-mllvm -Wl,-obfuscator-conf=all")
+-endif ()
+-
+-# ---
++  $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,-DBUILD_WITH_TRAMPOLINE_ASM,>
++)
+ 
+ if (SYSTEM.Android)
+   target_link_libraries(dobby log)
+@@ -348,10 +325,6 @@ if (SYSTEM.Android)
+       PROPERTIES
+       ANDROID_ARM_MODE arm
+       )
+-    set_target_properties(dobby_static
+-      PROPERTIES
+-      ANDROID_ARM_MODE arm
+-      )
+   endif ()
+ endif ()
+ 
+
+From 82a7062413cf0254c1b59fd764ff693e1f682d24 Mon Sep 17 00:00:00 2001
+From: linnys <770794281@qq.com>
+Date: Mon, 15 Jun 2026 11:11:55 +0800
+Subject: [PATCH 6/7] Arm64 was built success on Android Studio
+
+---
+ common/os_arch_features.h                     |  2 +-
+ source/PlatformUnifiedInterface/platform.h    | 26 +------------------
+ .../platform_memory.h                         | 26 +++++++++++++++++++
+ .../arm64/closure_bridge_arm64.S              |  5 ++++
+ 4 files changed, 33 insertions(+), 26 deletions(-)
+ create mode 100644 source/PlatformUnifiedInterface/platform_memory.h
+
+diff --git a/common/os_arch_features.h b/common/os_arch_features.h
+index 9833dec3..9beecf9a 100644
+--- a/common/os_arch_features.h
++++ b/common/os_arch_features.h
+@@ -4,7 +4,7 @@
+ #include <stddef.h>
+ #include "pac_kit.h"
+ 
+-#include "PlatformUnifiedInterface/platform.h"
++#include "PlatformUnifiedInterface/platform_memory.h"
+ 
+ #ifndef __has_feature
+ #define __has_feature(x) 0
+diff --git a/source/PlatformUnifiedInterface/platform.h b/source/PlatformUnifiedInterface/platform.h
+index b946514e..f19efb71 100644
+--- a/source/PlatformUnifiedInterface/platform.h
++++ b/source/PlatformUnifiedInterface/platform.h
+@@ -1,6 +1,7 @@
+ #pragma once
+ 
+ #include "dobby/common.h"
++#include "platform_memory.h"
+ 
+ namespace base {
+ 
+@@ -58,31 +59,6 @@ struct OSThread : base::ThreadInterface, base::ThreadInterface::Delegate {
+   bool Start();
+ };
+ 
+-enum MemoryPermission {
+-  kNoAccess,
+-  kRead = 1,
+-  kWrite = 2,
+-  kExecute = 4,
+-  kReadWrite = kRead | kWrite,
+-  kReadExecute = kRead | kExecute,
+-  kReadWriteExecute = kRead | kWrite | kExecute,
+-};
+-
+-class OSMemory {
+-public:
+-  static int PageSize();
+-
+-  static void *Allocate(size_t size, MemoryPermission access);
+-
+-  static void *Allocate(size_t size, MemoryPermission access, void *fixed_addr);
+-
+-  static bool Free(void *address, size_t size);
+-
+-  static bool Release(void *address, size_t size);
+-
+-  static bool SetPermission(void *address, size_t size, MemoryPermission access);
+-};
+-
+ class OSPrint {
+ public:
+   static void Print(const char *format, ...);
+diff --git a/source/PlatformUnifiedInterface/platform_memory.h b/source/PlatformUnifiedInterface/platform_memory.h
+new file mode 100644
+index 00000000..1d695799
+--- /dev/null
++++ b/source/PlatformUnifiedInterface/platform_memory.h
+@@ -0,0 +1,26 @@
++#pragma once
++
++enum MemoryPermission {
++    kNoAccess,
++    kRead = 1,
++    kWrite = 2,
++    kExecute = 4,
++    kReadWrite = kRead | kWrite,
++    kReadExecute = kRead | kExecute,
++    kReadWriteExecute = kRead | kWrite | kExecute,
++};
++
++class OSMemory {
++public:
++    static int PageSize();
++
++    static void *Allocate(size_t size, MemoryPermission access);
++
++    static void *Allocate(size_t size, MemoryPermission access, void *fixed_addr);
++
++    static bool Free(void *address, size_t size);
++
++    static bool Release(void *address, size_t size);
++
++    static bool SetPermission(void *address, size_t size, MemoryPermission access);
++};
+\ No newline at end of file
+diff --git a/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S b/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S
+index 73491816..4d6fbfa6 100644
+--- a/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S
++++ b/source/TrampolineBridge/ClosureTrampolineBridge/arm64/closure_bridge_arm64.S
+@@ -50,8 +50,13 @@ str TMP_REG_0, [sp, #(1 * 8)]
+ // call convention: x0 = register context, x1 = interceptor entry
+ mov x0, sp
+ ldr x1, [sp, #(2 * 8 + 2 * 8 + 30 * 8 + 8 * 16)]
++#if defined(__ANDROID__)
++adrp TMP_REG_0, :got:common_closure_bridge_handler
++ldr  TMP_REG_0, [TMP_REG_0, :got_lo12:common_closure_bridge_handler]
++#else
+ adrp TMP_REG_0, cdecl(common_closure_bridge_handler)@PAGE
+ add TMP_REG_0, TMP_REG_0, cdecl(common_closure_bridge_handler)@PAGEOFF
++#endif
+ blr TMP_REG_0
+ 
+ // restore stack, saved original sp
+
+From cb618a71332dd6426cbc28c940f1e43ceb0e324e Mon Sep 17 00:00:00 2001
+From: aussa <gregoire.pouth@icloud.com>
+Date: Thu, 18 Jun 2026 19:24:35 -0400
+Subject: [PATCH 7/7] add null checks to TINYSTL buffer operations and rename
+ ARM64 near trampoline assert macro
+
+---
+ external/TINYSTL/buffer.h                              | 10 ++++++----
+ .../NearBranchTrampoline/near_trampoline_arm64.cc      |  4 ++--
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/external/TINYSTL/buffer.h b/external/TINYSTL/buffer.h
+index 7ec5d199..41a54668 100644
+--- a/external/TINYSTL/buffer.h
++++ b/external/TINYSTL/buffer.h
+@@ -136,19 +136,21 @@ namespace tinystl {
+ 	template<typename T, typename Alloc>
+ 	static inline void buffer_destroy(buffer<T, Alloc>* b) {
+ 		buffer_destroy_range(b->first, b->last);
+-		Alloc::static_deallocate(b->first, (size_t)((char*)b->capacity - (char*)b->first));
++		if (b->first != nullptr)
++			Alloc::static_deallocate(b->first, (size_t)((char*)b->capacity - (char*)b->first));
+ 	}
+ 
+ 	template<typename T, typename Alloc>
+ 	static inline void buffer_reserve(buffer<T, Alloc>* b, size_t capacity) {
+-		if (b->first + capacity <= b->capacity)
++		if (b->first != nullptr && b->first + capacity <= b->capacity)
+ 			return;
+ 
+ 		typedef T* pointer;
+ 		const size_t size = (size_t)(b->last - b->first);
+ 		pointer newfirst = (pointer)Alloc::static_allocate(sizeof(T) * capacity);
+ 		buffer_move_urange(newfirst, b->first, b->last);
+-		Alloc::static_deallocate(b->first, sizeof(T) * capacity);
++		if (b->first != nullptr)
++			Alloc::static_deallocate(b->first, (size_t)((char*)b->capacity - (char*)b->first));
+ 
+ 		b->first = newfirst;
+ 		b->last = newfirst + size;
+@@ -203,7 +205,7 @@ namespace tinystl {
+ 	static inline T* buffer_insert_common(buffer<T, Alloc>* b, T* where, size_t count) {
+ 		const size_t offset = (size_t)(where - b->first);
+ 		const size_t newsize = (size_t)((b->last - b->first) + count);
+-		if (b->first + newsize > b->capacity)
++		if (b->first == nullptr || b->first + newsize > b->capacity)
+ 			buffer_reserve(b, (newsize * 3) / 2);
+ 
+ 		where = b->first + offset;
+diff --git a/source/InterceptRouting/NearBranchTrampoline/near_trampoline_arm64.cc b/source/InterceptRouting/NearBranchTrampoline/near_trampoline_arm64.cc
+index 2ec08e8c..c7efc8f6 100644
+--- a/source/InterceptRouting/NearBranchTrampoline/near_trampoline_arm64.cc
++++ b/source/InterceptRouting/NearBranchTrampoline/near_trampoline_arm64.cc
+@@ -12,7 +12,7 @@
+ 
+ using namespace zz::arm64;
+ 
+-#define assert(x)                                                                                                      \
++#define DOBBY_NEAR_ASSERT(x)                                                                                           \
+   if (!(x)) {                                                                                                          \
+     *(int *)0x41414141 = 0;                                                                                            \
+   }
+@@ -30,7 +30,7 @@ static Trampoline *GenerateFastForwardTrampoline(addr_t src, addr_t dst) {
+   // [ldr + br + #label]
+   auto forward_tramp_insns_needed = 4 * 4;
+   auto blk = gNearMemoryAllocator.allocNearCodeBlock(forward_tramp_insns_needed, src, ARM64_B_XXX_RANGE);
+-  assert(blk.addr() % 4 == 0 && "address must be aligned to 4 bytes");
++  DOBBY_NEAR_ASSERT(blk.addr() % 4 == 0 && "address must be aligned to 4 bytes");
+   if (!blk.addr()) {
+     ERROR_LOG("search near code block failed");
+     return {};
