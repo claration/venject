@@ -14,6 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Install Dependencies (apt-get)
+        run: |
+          sudo apt-get update 
+          sudo apt-get install -y patchelf
+
+          curl -L -o /tmp/appimagetool https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          chmod +x /tmp/appimagetool
+          sudo mv /tmp/appimagetool /usr/local/bin/appimagetool
+
       # actions cmake doesn't come with appimage cpack
       - name: Install CMake
         uses: ssrobins/install-cmake@v1
