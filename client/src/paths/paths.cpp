@@ -31,31 +31,32 @@ std::vector<DiscordInstall> FindDiscords()
         std::error_code ec;
 
         // New layout: app-*/resources/app
-		fs::path executable;
+        fs::path executable;
 
-		if (fs::is_directory(installPath, ec)) {
-			for (const auto& entry : fs::directory_iterator(installPath, ec)) {
-				if (ec)
-					break;
+        if (fs::is_directory(installPath, ec)) {
+            for (const auto& entry : fs::directory_iterator(installPath, ec)) {
+                if (ec)
+                    break;
 
-				if (!entry.is_directory())
-					continue;
+                if (!entry.is_directory())
+                    continue;
 
-				const auto resources = entry.path() / "resources";
+                const auto name = entry.path().filename().string();
 
-				std::error_code dir_ec;
-				if (!fs::is_directory(resources, dir_ec))
-					continue;
+                if (!name.starts_with("app-"))
+                    continue;
 
-				const auto exe = entry.path() / executableName;
+                const auto resources = entry.path() / "resources";
 
-				std::error_code exe_ec;
-				if (fs::is_regular_file(exe, exe_ec)) {
-					executable = exe;
-					break;
-				}
-			}
-		}
+                if (!fs::is_directory(resources, ec))
+                    continue;
+
+                const auto exe = entry.path() / executableName;
+
+                if (fs::exists(exe, ec) && exe > executable)
+                    executable = exe;
+            }
+        }
 
         if (!executable.empty()) {
             const auto resources =
