@@ -5,11 +5,11 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QTimer>
-#include <QJsonArray>
 
 #include "paths/paths.hpp"
 #include "globals.h"
@@ -26,14 +26,15 @@ UpdateResult fail(const QString& error)
 
 QNetworkReply* get(
     QNetworkAccessManager& manager,
-    const QUrl& url)
+    const QUrl& url,
+    int redirectCount = 0)
 {
-    QNetworkRequest request(url);
+    if (redirectCount > 5) {
+        return nullptr;
+    }
 
-    request.setHeader(
-        QNetworkRequest::UserAgentHeader,
-        MOD_NAME
-    );
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::UserAgentHeader, MOD_NAME);
 
     auto* reply = manager.get(request);
 
@@ -43,34 +44,43 @@ QNetworkReply* get(
     timer.setSingleShot(true);
     timer.start(NETWORK_TIMEOUT);
 
-    QObject::connect(
-        reply,
-        &QNetworkReply::finished,
-        &loop,
-        &QEventLoop::quit
-    );
-
-    QObject::connect(
-        &timer,
-        &QTimer::timeout,
-        &loop,
-        &QEventLoop::quit
-    );
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
 
     loop.exec();
 
-    if (!reply->isFinished()) reply->abort();
+    if (!reply->isFinished()) {
+        reply->abort();
+        return reply;
+    }
+
+    const auto status = reply->attribute(
+        QNetworkRequest::HttpStatusCodeAttribute
+    ).toInt();
+
+    if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
+        QUrl redirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+        if (redirectUrl.isRelative()) {
+            redirectUrl = url.resolved(redirectUrl);
+        }
+
+        reply->deleteLater();
+
+        if (redirectUrl.isValid()) {
+            return get(manager, redirectUrl, redirectCount + 1);
+        }
+    }
 
     return reply;
 }
 
 bool successful(QNetworkReply* reply)
 {
-    if (reply->error() != QNetworkReply::NoError) return false;
+    if (!reply || reply->error() != QNetworkReply::NoError) return false;
 
     const auto status = reply->attribute(
-		QNetworkRequest::HttpStatusCodeAttribute
-	).toInt();
+        QNetworkRequest::HttpStatusCodeAttribute
+    ).toInt();
 
     return status >= 200 && status < 300;
 }
@@ -113,8 +123,8 @@ UpdateResult downloadAsset(
     auto* reply = get(manager, url);
 
     if (!successful(reply)) {
-        const auto error = reply->errorString();
-        reply->deleteLater();
+        const auto error = reply ? reply->errorString() : "Unknown network error";
+        if (reply) reply->deleteLater();
 
         return fail(QString("Failed to download %1: %2").arg(name, error));
     }
@@ -133,9 +143,12 @@ UpdateResult downloadAsset(
         return fail(QString("Failed to write %1: %2").arg(name, file.errorString()));
     }
 
-    return {};
+    return {
+        .success = true
+    };
 }
-}
+
+} // namespace
 
 namespace network
 {
@@ -163,8 +176,8 @@ UpdateResult CheckForUpdates()
     auto* reply = get(manager, QUrl(MOD_RELEASE_GH));
 
     if (!successful(reply)) {
-        const auto error = reply->errorString();
-        reply->deleteLater();
+        const auto error = reply ? reply->errorString() : "Unknown network error";
+        if (reply) reply->deleteLater();
         return fail(error);
     }
 
@@ -183,19 +196,24 @@ UpdateResult DownloadLatest()
     auto* reply = get(manager, QUrl(MOD_RELEASE_GH));
 
     if (!successful(reply)) {
-        const auto error = reply->errorString();
-        reply->deleteLater();
+        const auto error = reply ? reply->errorString() : "Unknown network error";
+        if (reply) reply->deleteLater();
         return fail(error);
     }
 
-    const auto json = QJsonDocument::fromJson(reply->readAll());
+    const auto data = reply->readAll();
     reply->deleteLater();
+
+    const auto json = QJsonDocument::fromJson(data);
     if (!json.isObject()) return fail("Invalid GitHub response");
 
     const auto assets = json.object()["assets"].toArray();
     if (assets.isEmpty()) return fail("No release assets found");
 
     QDir dir(paths::ModDistPath());
+    if (!dir.exists() && !dir.mkpath(".")) {
+        return fail("Failed to create target directory: " + dir.path());
+    }
 
     static const QStringList required = {
         "patcher.js",
@@ -212,10 +230,13 @@ UpdateResult DownloadLatest()
         const auto name = asset["name"].toString();
         if (!required.contains(name)) continue;
 
-        const auto url = QUrl(asset["browser_download_url"].toString());
+        const auto downloadUrlStr = asset["browser_download_url"].toString();
+        const QUrl url(downloadUrlStr);
 
         const auto result = downloadAsset(manager, name, url, dir);
-        if (!result.success) return result;
+        if (!result.success) {
+            return result;
+        }
 
         found.insert(name);
     }
