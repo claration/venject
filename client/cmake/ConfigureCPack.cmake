@@ -1,11 +1,11 @@
-install(TARGETS samaraqt RUNTIME DESTINATION bin)
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
 # include(InstallRequiredSystemLibraries)
 
 cmake_policy(SET CMP0153 NEW)
 
 qt_generate_deploy_qml_app_script(
-    TARGET samaraqt
+    TARGET ${PROJECT_NAME}
     OUTPUT_SCRIPT DEPLOY_SCRIPT
 
     EXCLUDE_PLUGINS
@@ -79,7 +79,7 @@ set(CPACK_PACKAGE_NAME "Vencord Launcher")
 set(CPACK_PACKAGE_VENDOR "C")
 set(CPACK_PACKAGE_DESCRIPTION "Something cool!")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-set(CPACK_PACKAGE_EXECUTABLES samaraqt)
+set(CPACK_PACKAGE_EXECUTABLES ${PROJECT_NAME})
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "VencordLauncher")
 set(CPACK_GENERATOR "TGZ;AppImage")
 set(CPACK_APPIMAGE_DESKTOP_FILE "on.clarati.VencordLauncher.desktop")

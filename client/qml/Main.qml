@@ -93,10 +93,10 @@ ApplicationWindow {
 
                     source:
                         modelData.branch.toLowerCase() === "discord canary"
-							? "qrc:/samaraqt/resources/canary.svg"
+							? "qrc:/VencordLauncher/resources/canary.svg"
 							: modelData.branch.toLowerCase() === "discord development"
-								? "qrc:/samaraqt/resources/development.svg"
-								: "qrc:/samaraqt/resources/stable.svg"
+								? "qrc:/VencordLauncher/resources/development.svg"
+								: "qrc:/VencordLauncher/resources/stable.svg"
 
                     fillMode: Image.PreserveAspectFit
                 }

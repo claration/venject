@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 	Launcher launcher;
 	engine.rootContext()->setContextProperty("launcher", &launcher);
 
-	app.setWindowIcon(QIcon(":/samaraqt/resources/icon.ico"));
+	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
 
     QObject::connect(
         &engine,
@@ -119,6 +119,6 @@ int main(int argc, char **argv)
         Qt::QueuedConnection
     );
 
-    engine.load(QUrl(QStringLiteral("qrc:/samaraqt/qml/Main.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:/VencordLauncher/qml/Main.qml")));
     return app.exec();
 }

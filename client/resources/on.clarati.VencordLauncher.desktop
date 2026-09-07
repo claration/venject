@@ -5,6 +5,6 @@ Name=Vencord Launcher
 Comment=Easily use Vencord with Discord
 Categories=Utility;
 Icon=on.clarati.VencordLauncher
-Exec=samaraqt
+Exec=VencordLauncher
 Terminal=false
 StartupWMClass=on.clarati.VencordLauncher

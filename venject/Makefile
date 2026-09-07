@@ -2,4 +2,4 @@
 
 clean:
 	rm -rf src/gen
-	rm embedded/app.asar
+	rm embedded/app.asar || true
