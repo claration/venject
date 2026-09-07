@@ -14,10 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install Dependencies (apt-get)
-        run: |
-          sudo apt-get update 
-          sudo apt-get install -y cmake
+      # actions cmake doesn't come with appimage cpack
+      - name: Install CMake
+        uses: ssrobins/install-cmake@v1
+        with:
+          version: 4.1.0
 
       - uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
         name: Install Qt
