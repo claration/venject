@@ -1,10 +1,8 @@
-
-
 #include "paths.hpp"
 
 #ifdef __APPLE__
 #error "Apple is not supported"
-#elif defined(__linux__)
+#else // __APPLE__
 
 #include <cstdlib>
 #include <filesystem>
@@ -131,4 +129,4 @@ fs::path OurHookLibraryPath()
 
 }
 
-#endif // __LINUX__
+#endif // __APPLE__
