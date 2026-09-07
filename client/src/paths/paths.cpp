@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream> // std::ofstream
+#include <unordered_set>
+#include <sstream>
 #include <unistd.h> // readlink
 #include <limits.h> // PATH_MAX, setbuffer
 
@@ -18,158 +20,71 @@ namespace fs = std::filesystem;
 
 namespace paths {
 
-std::vector<DiscordInstall> FindDiscords() 
+std::vector<DiscordInstall> FindDiscords()
 {
     std::vector<DiscordInstall> result;
+    std::unordered_set<std::string> seen;
 
-    const fs::path home = std::getenv("HOME");
+    const char* homeEnv = std::getenv("HOME");
+    fs::path home = homeEnv ? homeEnv : "";
 
-    const auto add = [&](const fs::path& installPath,
-                         const std::string& executableName,
-                         const std::string& branch,
-                         bool flatpak) {
+    auto add = [&](fs::path exe, const std::string& branch, bool flatpak, bool systemElectron) {
         std::error_code ec;
+        if (exe.empty() || !fs::exists(exe, ec)) return;
 
-        // New layout: app-*/resources/app
-        fs::path executable;
+        fs::path resolved = fs::canonical(exe, ec);
+        if (ec) resolved = fs::weakly_canonical(exe, ec);
 
-        if (fs::is_directory(installPath, ec)) {
-            for (const auto& entry : fs::directory_iterator(installPath, ec)) {
-                if (ec)
-                    break;
+        std::string key = resolved.empty() ? exe.string() : resolved.string();
+        if (!seen.insert(key).second) return;
 
-                if (!entry.is_directory())
-                    continue;
+        fs::path res = exe.parent_path() / "resources";
+        if (!fs::exists(res, ec)) res = exe.parent_path();
 
-                const auto name = entry.path().filename().string();
-
-                if (!name.starts_with("app-"))
-                    continue;
-
-                const auto resources = entry.path() / "resources";
-
-                if (!fs::is_directory(resources, ec))
-                    continue;
-
-                const auto exe = entry.path() / executableName;
-
-                if (fs::exists(exe, ec) && exe > executable)
-                    executable = exe;
-            }
-        }
-
-        if (!executable.empty()) {
-            const auto resources =
-                executable.parent_path() / "resources";
-
-            result.push_back({
-                .path = executable,
-                .branch = branch,
-                .isPatched = fs::exists(
-                    resources / "_app.asar",
-                    ec
-                ),
-                .isFlatpak = flatpak,
-                .isSystemElectron = false
-            });
-
-            return;
-        }
-
-        // Old layout: resources/app
-        const auto resources = installPath / "resources";
-
-        if (fs::is_directory(resources, ec)) {
-            const auto exe = installPath / executableName;
-
-            if (fs::exists(exe, ec)) {
-                result.push_back({
-                    .path = exe,
-                    .branch = branch,
-                    .isPatched = fs::exists(
-                        resources / "_app.asar",
-                        ec
-                    ),
-                    .isFlatpak = flatpak,
-                    .isSystemElectron = false
-                });
-
-                return;
-            }
-        }
-
-        // System Electron.
-        if (fs::exists(installPath / "app.asar", ec)) {
-            const auto exe = installPath / executableName;
-
-            if (fs::exists(exe, ec)) {
-                result.push_back({
-                    .path = exe,
-                    .branch = branch,
-                    .isPatched = fs::exists(
-                        installPath / "_app.asar.unpacked",
-                        ec
-                    ),
-                    .isFlatpak = flatpak,
-                    .isSystemElectron = true
-                });
-            }
-        }
+        result.push_back({
+            .path = exe,
+            .branch = branch,
+            .isPatched = fs::exists(res / "_app.asar", ec) || fs::exists(res / "_app.asar.unpacked", ec),
+            .isFlatpak = flatpak,
+            .isSystemElectron = systemElectron
+        });
     };
 
-    // Standard installations.
-    for (const auto& [name, executable, branch] : {
-        std::tuple{"discord", "Discord", "stable"},
-        std::tuple{"discordcanary", "DiscordCanary", "canary"},
-        std::tuple{"discordptb", "DiscordPTB", "ptb"}
-    }) {
-        for (const auto& base : {
-            fs::path{"/usr/share"},
-            fs::path{"/usr/lib64"},
-            fs::path{"/opt"},
-            home / ".local/share",
-            home / ".dvm",
-            fs::path{"/var/lib/flatpak/app"},
-            home / ".local/share/flatpak/app"
-        }) {
-            const auto path = base / name;
+    if (home.empty()) return result;
 
-            if (fs::exists(path))
-                add(path, executable, branch, false);
+    const std::vector<std::pair<fs::path, std::tuple<const char*, const char*, bool>>> checks = {
+        {"/opt/discord", {"Discord", "Discord Stable", false}},
+        {home / ".config/discord", {"Discord", "Discord Stable", false}},
+        {home / ".config/discordcanary", {"DiscordCanary", "Discord Canary", false}},
+        {home / ".config/discordptb", {"DiscordPTB", "Discord PTB", false}},
+        {home / ".var/app/com.discordapp.Discord/config/discord", {"Discord", "Discord Stable", true}},
+        {home / ".var/app/com.discordapp.DiscordCanary/config/discord", {"DiscordCanary", "Discord Canary", true}},
+        {home / ".var/app/com.discordapp.DiscordPTB/config/discord", {"DiscordPTB", "Discord PTB", true}}
+    };
+
+    for (const auto& [base, info] : checks) {
+        std::error_code ec;
+        if (!fs::exists(base, ec)) continue;
+
+        auto [exeName, branch, flatpak] = info;
+        fs::path bestExe;
+
+        if (fs::is_directory(base, ec)) {
+            for (auto& entry : fs::directory_iterator(base, ec)) {
+                if (!entry.path().filename().string().starts_with("app-")) continue;
+
+                fs::path exe = entry.path() / exeName;
+                if (fs::exists(exe, ec) && exe > bestExe) bestExe = exe;
+            }
+        }
+
+        if (!bestExe.empty()) {
+            add(bestExe, branch, flatpak, false);
+        } else {
+            fs::path exe = base / exeName;
+            if (fs::exists(exe, ec)) add(exe, branch, flatpak, fs::exists(base / "app.asar", ec));
         }
     }
-
-    // Native Discord.
-    add(home / ".config/discord",
-        "Discord", "Discord Stable", false);
-
-    add(home / ".config/discordcanary",
-        "DiscordCanary", "Discord Canary", false);
-
-    add(home / ".config/discordptb",
-        "DiscordPTB", "Discord PTB", false);
-
-    // Flatpak Discord.
-    add(
-        home / ".var/app/com.discordapp.Discord/config/discord",
-        "Discord",
-        "Discord Stable",
-        true
-    );
-
-    add(
-        home / ".var/app/com.discordapp.DiscordCanary/config/discord",
-        "DiscordCanary",
-        "Discord Canary",
-        true
-    );
-
-    add(
-        home / ".var/app/com.discordapp.DiscordPTB/config/discord",
-        "DiscordPTB",
-        "Discord PTB",
-        true
-    );
 
     return result;
 }
