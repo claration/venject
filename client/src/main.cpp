@@ -14,6 +14,7 @@
 #include <QQmlContext>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QIcon>
 
 #include "launch.hpp"
 
@@ -107,6 +108,8 @@ int main(int argc, char **argv)
 
 	Launcher launcher;
 	engine.rootContext()->setContextProperty("launcher", &launcher);
+
+	app.setWindowIcon(QIcon(":/samaraqt/resources/icon.ico"));
 
     QObject::connect(
         &engine,

@@ -36,8 +36,10 @@ qt_add_qml_module(${PROJECT_NAME}
 		qml/Main.qml
 
     RESOURCES
-        resources/canary.webp
-        resources/stable.webp
+        resources/canary.svg
+        resources/stable.svg
+		resources/development.svg
+		resources/icon.ico
 )
 
 include(cmake/Git.cmake)
