@@ -57,11 +57,11 @@ ApplicationWindow {
                 return
             }
 
-            launcher.launch(launchPath)
+            launcher.launch_self(launchPath)
         }
 
         onRejected: {
-            launcher.launch(launchPath)
+            launcher.launch_self(launchPath)
         }
     }
 
@@ -155,7 +155,7 @@ ApplicationWindow {
                         }
 
                         if (result.upToDate) {
-                            launcher.launch(modelData.path)
+                            launcher.launch_self(modelData.path)
                             return
                         }
 

@@ -68,10 +68,9 @@ bool successful(QNetworkReply* reply)
 {
     if (reply->error() != QNetworkReply::NoError) return false;
 
-    const auto status =
-        reply->attribute(
-            QNetworkRequest::HttpStatusCodeAttribute
-        ).toInt();
+    const auto status = reply->attribute(
+		QNetworkRequest::HttpStatusCodeAttribute
+	).toInt();
 
     return status >= 200 && status < 300;
 }
@@ -181,13 +180,11 @@ UpdateResult DownloadLatest()
 {
     QNetworkAccessManager manager;
 
-    auto* reply =
-        get(manager, QUrl(MOD_RELEASE_GH));
+    auto* reply = get(manager, QUrl(MOD_RELEASE_GH));
 
     if (!successful(reply)) {
         const auto error = reply->errorString();
         reply->deleteLater();
-
         return fail(error);
     }
 
@@ -217,12 +214,7 @@ UpdateResult DownloadLatest()
 
         const auto url = QUrl(asset["browser_download_url"].toString());
 
-        const auto result = downloadAsset(
-			manager,
-			name,
-			url,
-			dir
-		);
+        const auto result = downloadAsset(manager, name, url, dir);
         if (!result.success) return result;
 
         found.insert(name);

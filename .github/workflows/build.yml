@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 // 7.x
+
+      - name: Install Dependencies (apt-get)
+        run: |
+          sudo apt-get update 
+          sudo apt-get install -y cmake
+
+      - uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 // 4.x
+        name: Install Qt
+        with:
+          host: linux
+          modules: qtmultimedia
+          version: '6.10.1'
+          dir: ${{ github.workspace }}
+
+      - name: Build
+        run: |
+          make package JOBS=$(nproc)
+
+      - name: Upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vencord_launcher-x86_64
+          path: |
+            build/*.tar.gz
+            build/*.AppImage
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux]
+
+    steps:
+    - name: Download Linux aarch64 Artifact
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: vencord_launcher-x86_64
+        path: dist/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+      with:
+        name: ${{ env.TAG }}
+        tag_name: ${{ env.TAG }}
+        files: |
+          dist/*
+        generate_release_notes: true
+        fail_on_unmatched_files: true
+        draft: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

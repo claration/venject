@@ -1,6 +1,6 @@
 install(TARGETS samaraqt RUNTIME DESTINATION bin)
 
-include(InstallRequiredSystemLibraries)
+# include(InstallRequiredSystemLibraries)
 
 cmake_policy(SET CMP0153 NEW)
 
@@ -38,6 +38,14 @@ qt_generate_deploy_qml_app_script(
 
 		KDEPlasmaPlatformTheme6
 		layer-shell
+
+	POST_EXCLUDE_REGEXES
+        "libc\\.so.*"
+        "libm\\.so.*"
+        "libpthread\\.so.*"
+        "libdl\\.so.*"
+        "librt\\.so.*"
+        "libresolv\\.so.*"
 )
 
 install(SCRIPT ${DEPLOY_SCRIPT})
@@ -76,6 +84,6 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "VencordLauncher")
 set(CPACK_GENERATOR "TGZ;AppImage")
 set(CPACK_APPIMAGE_DESKTOP_FILE "on.clarati.VencordLauncher.desktop")
 set(CPACK_PACKAGE_ICON "on.clarati.VencordLauncher.png")
-
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}")
+
 include(CPack)

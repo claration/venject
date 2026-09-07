@@ -12,6 +12,34 @@
 
 Launcher::Launcher(QObject* parent): QObject(parent){}
 
+void Launcher::launch_self(
+	const QString& path,
+	const QStringList& discord_args,
+	const QString& entry_point_path)
+{
+    QProcess process;
+
+    QStringList args;
+    args.append("-l");
+    args.append(path);
+
+	for (const QString& discord_arg : discord_args)
+    {
+        args.append("-a");
+        args.append(discord_arg);
+    }
+
+	if (!entry_point_path.isEmpty())
+    {
+        args.append("-o");
+        args.append(entry_point_path);
+    }
+
+    process.setProgram(QString::fromStdString(paths::OurExecutablePath().string()));
+    process.setArguments(args);
+    process.startDetached();
+}
+
 void Launcher::launch(
 	const QString& path, 		// discord executable
 	const QStringList& args, 	// discord args (-o)
@@ -24,7 +52,6 @@ void Launcher::launch(
 
     QProcess process;
 
-	// TODO: fix relaunches with GUI
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
 	environment.insert("MODLOADER_MOD_ENTRYPOINT", QString::fromStdString(paths::ModEntrypointPath().string()));
