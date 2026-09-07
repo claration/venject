@@ -13,6 +13,8 @@ include(FetchContent)
 # MARK: CMAKE DEPENDENCIES
 # =========================
 
+# TODO: on windows, use detours instead of dobby
+
 set(DOBBY_DEBUG OFF CACHE BOOL "" FORCE)
 set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
 set(DOBBY_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
