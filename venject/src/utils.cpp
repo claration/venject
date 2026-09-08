@@ -27,6 +27,7 @@ std::string write_payload_to_tmp()
     return VENJECT_ASAR_PATH;
 }
 
+// we can probably elimate this logic with an environment variables lol
 const std::string app_folder = []() -> std::string {
 	char buf[4096];
 
