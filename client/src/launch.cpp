@@ -50,7 +50,9 @@ void Launcher::launch(
     for (const auto& arg : argv)
         jsonArgs.append(arg);
 
-    QProcess process;
+	// TODO: use detours instead of qprocesses for launching processes
+	// injected with arbritrary .dll files
+	QProcess process;
 
     // TODO: pass more environment variables to the library
     // things such as temporary directory path

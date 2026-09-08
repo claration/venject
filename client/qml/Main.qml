@@ -100,7 +100,7 @@ ApplicationWindow {
 
                     fillMode: Image.PreserveAspectFit
                 }
-
+				// TODO: detect whether an injected discord is currently opened
                 Column {
                     width:
                         parent.width -
