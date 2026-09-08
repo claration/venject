@@ -52,6 +52,8 @@ void Launcher::launch(
 
     QProcess process;
 
+    // TODO: pass more environment variables to the library
+    // things such as temporary directory path
     auto environment = QProcessEnvironment::systemEnvironment();
     environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
 	environment.insert("MODLOADER_MOD_ENTRYPOINT", QString::fromStdString(paths::ModEntrypointPath().string()));

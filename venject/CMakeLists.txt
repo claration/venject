@@ -13,32 +13,43 @@ include(FetchContent)
 # MARK: CMAKE DEPENDENCIES
 # =========================
 
-set(DOBBY_DEBUG OFF CACHE BOOL "" FORCE)
-set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
-set(DOBBY_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
-set(DOBBY_BUILD_TEST OFF CACHE BOOL "" FORCE)
-set(NearBranch ON CACHE BOOL "" FORCE)
-set(FullFloatingPointRegisterPack OFF CACHE BOOL "" FORCE)
-set(Plugin.SymbolResolver ON CACHE BOOL "" FORCE)
-set(Plugin.ImportTableReplace OFF CACHE BOOL "" FORCE)
-set(Plugin.Android.BionicLinkerUtil OFF CACHE BOOL "" FORCE)
+if(MINGW)
+    FetchContent_Declare(
+        Detours
+        GIT_REPOSITORY https://github.com/0xeb/detours-cmake.git
+        GIT_TAG master
+    )
 
-FetchContent_Declare(
-    Dobby
-    GIT_REPOSITORY https://github.com/jmpews/Dobby.git
-    GIT_TAG master
-    PATCH_COMMAND
-        ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
-        patch --forward --ignore-whitespace -p1
-        -i "${CMAKE_CURRENT_SOURCE_DIR}/patches/dobby/0001-fix-compilations.patch" || true
-)
+    FetchContent_MakeAvailable(Detours)
+else()
+    set(DOBBY_DEBUG OFF CACHE BOOL "" FORCE)
+    set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
+    set(DOBBY_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+    set(DOBBY_BUILD_TEST OFF CACHE BOOL "" FORCE)
+    set(NearBranch ON CACHE BOOL "" FORCE)
+    set(FullFloatingPointRegisterPack OFF CACHE BOOL "" FORCE)
+    set(Plugin.SymbolResolver ON CACHE BOOL "" FORCE)
+    set(Plugin.ImportTableReplace OFF CACHE BOOL "" FORCE)
+    set(Plugin.Android.BionicLinkerUtil OFF CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(Dobby)
+    FetchContent_Declare(
+        Dobby
+        GIT_REPOSITORY https://github.com/jmpews/Dobby.git
+        GIT_TAG master
+        PATCH_COMMAND
+            ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+            patch --forward --ignore-whitespace -p1
+            -i "${CMAKE_CURRENT_SOURCE_DIR}/patches/dobby/0001-fix-compilations.patch" || true
+    )
+
+    FetchContent_MakeAvailable(Dobby)
+endif()
 
 # =========================
 # MARK: TARGET
 # =========================
 
+message(STATUS "Using XXD on this shit.")
 include(cmake/xxd.cmake)
 
 file(GLOB_RECURSE VENCORD_HOOK_SOURCES CONFIGURE_DEPENDS
@@ -61,10 +72,16 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wextra
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    dobby
-    dl
-)
+if(MINGW)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        lib_detours
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        dobby
+        dl
+    )
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(${PROJECT_NAME} PRIVATE
@@ -80,9 +97,11 @@ endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 install(
     TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION bin
+    RUNTIME DESTINATION bin
 )
