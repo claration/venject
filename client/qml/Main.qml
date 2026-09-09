@@ -11,7 +11,7 @@ ApplicationWindow {
     width: 600
     height: 420
     minimumWidth: 600
-    minimumheight: 420
+    minimumHeight: 420
 
     title: "Vencord Launcher"
 
