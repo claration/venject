@@ -2,8 +2,9 @@
 
 #include <string>
 
-namespace utils {
+namespace utils
+{
 
-std::string redirect(const char* path);
+std::string redirect(const char *path);
 
 }

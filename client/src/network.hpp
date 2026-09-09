@@ -2,21 +2,20 @@
 
 #include <QString>
 
-struct UpdateResult
-{
-    bool success = false;
-    QString error;
+struct UpdateResult {
+	bool	success = false;
+	QString error;
 
-    QString latestHash;
-    QString installedHash;
+	QString latestHash;
+	QString installedHash;
 
-    bool upToDate = false;
+	bool upToDate = false;
 };
 
 namespace network
 {
-    UpdateResult CheckForUpdates();
-    UpdateResult DownloadLatest();
+UpdateResult CheckForUpdates();
+UpdateResult DownloadLatest();
 
-    QString installedHash();
-}
+QString installedHash();
+} // namespace network
