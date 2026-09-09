@@ -96,8 +96,8 @@ std::vector<DiscordInstall> FindDiscords()
 
     if (home.empty()) return result;
 
-    #ifdef _WIN32
     const std::vector<std::pair<fs::path, std::tuple<const char*, const char*, bool>>> checks = {
+	#ifdef _WIN32
         {home / "Discord", {"Discord", "Discord Stable", false}},
         {home / "DiscordCanary", {"DiscordCanary", "Discord Canary", false}},
         {home / "DiscordPTB", {"DiscordPTB", "Discord PTB", false}}
@@ -109,8 +109,8 @@ std::vector<DiscordInstall> FindDiscords()
         {home / ".var/app/com.discordapp.Discord/config/discord", {"Discord", "Discord Stable", true}},
         {home / ".var/app/com.discordapp.DiscordCanary/config/discord", {"DiscordCanary", "Discord Canary", true}},
         {home / ".var/app/com.discordapp.DiscordPTB/config/discord", {"DiscordPTB", "Discord PTB", true}}
-    };
     #endif
+	};
 
     for (const auto& [base, info] : checks) {
         std::error_code ec;
