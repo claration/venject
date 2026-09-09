@@ -67,13 +67,6 @@ if(MINGW)
     )
 endif()
 
-if(LINUX)
-    target_link_options(${PROJECT_NAME} PRIVATE
-		-static-libgcc
-		-static-libstdc++
-    )
-endif()
-
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(LINUX)
         target_link_options(${PROJECT_NAME} PRIVATE
