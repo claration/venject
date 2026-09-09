@@ -90,8 +90,7 @@ ApplicationWindow {
                 Image {
                     width: 44
                     height: 44
-                    smooth: false
-                    mipmap: true
+                    sourceSize: Qt.size(44, 44)
 
                     anchors.verticalCenter: parent.verticalCenter
 
