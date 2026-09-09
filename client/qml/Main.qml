@@ -88,6 +88,7 @@ ApplicationWindow {
                 Image {
                     width: 44
                     height: 44
+                    mipmap: true
 
                     anchors.verticalCenter: parent.verticalCenter
 
