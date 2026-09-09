@@ -10,6 +10,8 @@ ApplicationWindow {
     visible: true
     width: 600
     height: 420
+    minimumWidth: 600
+    minimumheight: 420
 
     title: "Vencord Launcher"
 
