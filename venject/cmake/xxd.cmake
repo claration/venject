@@ -1,4 +1,5 @@
 find_program(BASH_EXECUTABLE bash REQUIRED)
+find_program(_XXD xxd REQUIRED)
 
 # TODO: need powershell for msvc, or just keep using mingw..
 add_custom_target(generate_embedded ALL

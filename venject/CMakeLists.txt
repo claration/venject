@@ -22,6 +22,7 @@ if(MINGW)
 
     FetchContent_MakeAvailable(Detours)
 else()
+    find_program(PATCH patch REQUIRED)
     set(DOBBY_DEBUG OFF CACHE BOOL "" FORCE)
     set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
     set(DOBBY_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
@@ -38,7 +39,7 @@ else()
         GIT_TAG master
         PATCH_COMMAND
             ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
-            patch --forward --ignore-whitespace -p1
+            ${PATCH} --forward --ignore-whitespace -p1
             -i "${CMAKE_CURRENT_SOURCE_DIR}/patches/dobby/0001-fix-compilations.patch" || true
     )
 
