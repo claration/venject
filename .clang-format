@@ -10,3 +10,4 @@ AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
+IndentPPDirectives: Leave

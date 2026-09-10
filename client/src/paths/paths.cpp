@@ -28,13 +28,13 @@ std::vector<DiscordInstall> FindDiscords()
 	std::vector<DiscordInstall>		result;
 	std::unordered_set<std::string> seen;
 
-#ifdef _WIN32
+	#ifdef _WIN32
 	const char *localAppDataEnv = std::getenv("LOCALAPPDATA");
 	fs::path	home			= localAppDataEnv ? localAppDataEnv : "";
-#else
+	#else
 	const char *homeEnv = std::getenv("HOME");
 	fs::path	home	= homeEnv ? homeEnv : "";
-#endif
+	#endif
 
 	auto parseVersion = [](const std::string &name) -> std::vector<int> {
 		if (!name.starts_with("app-"))
@@ -104,11 +104,11 @@ std::vector<DiscordInstall> FindDiscords()
 		return result;
 
 	const std::vector<std::pair<fs::path, std::tuple<const char *, const char *, bool>>> checks = {
-#ifdef _WIN32
+		#ifdef _WIN32
 		{home / "Discord", {"Discord", "Discord Stable", false}},
 		{home / "DiscordCanary", {"DiscordCanary", "Discord Canary", false}},
 		{home / "DiscordPTB", {"DiscordPTB", "Discord PTB", false}}
-#else
+		#else
 		{"/opt/discord", {"Discord", "Discord Stable", false}},
 		{home / ".config/discord", {"Discord", "Discord Stable", false}},
 		{home / ".config/discordcanary", {"DiscordCanary", "Discord Canary", false}},
@@ -116,7 +116,7 @@ std::vector<DiscordInstall> FindDiscords()
 		{home / ".var/app/com.discordapp.Discord/config/discord", {"Discord", "Discord Stable", true}},
 		{home / ".var/app/com.discordapp.DiscordCanary/config/discord", {"DiscordCanary", "Discord Canary", true}},
 		{home / ".var/app/com.discordapp.DiscordPTB/config/discord", {"DiscordPTB", "Discord PTB", true}}
-#endif
+		#endif
 	};
 
 	for (const auto &[base, info] : checks) {
@@ -137,9 +137,9 @@ std::vector<DiscordInstall> FindDiscords()
 					continue;
 
 				fs::path exe = entry.path() / exeName;
-#ifdef _WIN32
+				#ifdef _WIN32
 				exe += ".exe";
-#endif
+				#endif
 
 				if (fs::exists(exe, ec) && (bestExe.empty() || newerVersion(version, bestVersion))) {
 					bestExe		= exe;
@@ -152,9 +152,9 @@ std::vector<DiscordInstall> FindDiscords()
 			add(bestExe, branch, flatpak, false);
 		} else {
 			fs::path exe = base / exeName;
-#ifdef _WIN32
+			#ifdef _WIN32
 			exe += ".exe";
-#endif
+			#endif
 			if (fs::exists(exe, ec))
 				add(exe, branch, flatpak, fs::exists(base / "app.asar", ec));
 		}
@@ -165,15 +165,15 @@ std::vector<DiscordInstall> FindDiscords()
 
 fs::path ModDistPath()
 {
-#ifdef _WIN32
+	#ifdef _WIN32
 	auto	 appdata = std::getenv("APPDATA");
 	fs::path path	 = appdata ? appdata : "";
-#else  // _WIN32
+	#else  // _WIN32
 	auto xdg  = std::getenv("XDG_CONFIG_HOME");
 	auto home = fs::path(std::getenv("HOME")) / ".config";
 
 	fs::path path = xdg ? xdg : home;
-#endif // _WIN32
+	#endif // _WIN32
 
 	path /= MOD_NAME;
 	path /= "dist";
@@ -194,7 +194,7 @@ fs::path ModEntrypointPath()
 
 fs::path OurExecutablePath()
 {
-#ifdef _WIN32
+	#ifdef _WIN32
 	char buffer[MAX_PATH];
 
 	const auto len = GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
@@ -202,7 +202,7 @@ fs::path OurExecutablePath()
 		return {};
 
 	return fs::path(buffer, buffer + len);
-#else
+	#else
 	char buffer[PATH_MAX];
 
 	const auto len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
@@ -212,16 +212,16 @@ fs::path OurExecutablePath()
 	buffer[len] = '\0';
 
 	return fs::path(buffer);
-#endif
+	#endif
 }
 
 fs::path OurHookLibraryPath()
 {
-#ifdef _WIN32
+	#ifdef _WIN32
 	return OurExecutablePath().parent_path() / "libvencord_hook.dll";
-#else
+	#else
 	return OurExecutablePath().parent_path() / "libvencord_hook.so";
-#endif
+	#endif
 }
 
 } // namespace paths

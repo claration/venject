@@ -97,11 +97,11 @@ int main(int argc, char **argv)
 
 	// force software renderer
 	if (getenv("QT_QUICK_BACKEND") == nullptr) {
-#ifdef _WIN32
+		#ifdef _WIN32
 		_putenv_s("QT_QUICK_BACKEND", "software");
-#else  // _WIN32
+		#else  // _WIN32
 		setenv("QT_QUICK_BACKEND", "software", 1);
-#endif // _WIN32
+		#endif // _WIN32
 	}
 
 	QGuiApplication		  app(argc, argv);
