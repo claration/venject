@@ -40,6 +40,7 @@ qt_add_qml_module(${PROJECT_NAME}
         resources/stable.svg
 		resources/development.svg
 		resources/icon.ico
+		resources/icon.png
 )
 
 include(cmake/Git.cmake)

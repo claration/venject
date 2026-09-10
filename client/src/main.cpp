@@ -107,10 +107,18 @@ int main(int argc, char **argv)
 	QGuiApplication		  app(argc, argv);
 	QQmlApplicationEngine engine;
 
+	app.setOrganizationName("claration");
+	app.setOrganizationDomain("clarati.on");
+	app.setApplicationName("VencordLauncher");
+	app.setApplicationDisplayName("Vencord Launcher");
+	#ifdef _WIN32
+	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
+	#else // _WIN32
+	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.png"));
+	#endif // _WIN32
+
 	Launcher launcher;
 	engine.rootContext()->setContextProperty("launcher", &launcher);
-
-	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
 
 	QObject::connect(
 		&engine,
