@@ -65,7 +65,6 @@ void Launcher::launch(
 	process.setProcessEnvironment(environment);
 	process.setProgram(path);
 	process.setArguments(args);
-	process.startDetached();
 }
 
 QVariantList Launcher::findDiscords()

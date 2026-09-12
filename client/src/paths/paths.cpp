@@ -78,17 +78,16 @@ std::vector<DiscordInstall> FindDiscords()
 		std::tuple<const char *, const char *, bool>>
 	> checks = {
 		#ifdef _WIN32
-		{ home / "Discord", {"Discord", "Discord Stable", false} },
-		{ home / "DiscordCanary", {"DiscordCanary", "Discord Canary", false} },
-		{ home / "DiscordPTB", {"DiscordPTB", "Discord PTB", false} }
+		{ home / "Discord", {"Discord", "Stable", false} },
+		{ home / "DiscordCanary", {"DiscordCanary", "Canary", false} },
+		{ home / "DiscordPTB", {"DiscordPTB", "PTB", false} }
 		#else
-		{ "/opt/discord", {"Discord", "Discord Stable", false} },
-		{ home / ".config/discord", {"Discord", "Discord Stable", false} },
-		{ home / ".config/discordcanary", {"DiscordCanary", "Discord Canary", false} },
-		{ home / ".config/discordptb", {"DiscordPTB", "Discord PTB", false} },
-		{ home / ".var/app/com.discordapp.Discord/config/discord", {"Discord", "Discord Stable", true} },
-		{ home / ".var/app/com.discordapp.DiscordCanary/config/discord", {"DiscordCanary", "Discord Canary", true} },
-		{ home / ".var/app/com.discordapp.DiscordPTB/config/discord", {"DiscordPTB", "Discord PTB", true} }
+		{ home / ".config/discord", {"Discord", "Stable", false} },
+		{ home / ".config/discordcanary", {"DiscordCanary", "Canary", false} },
+		{ home / ".config/discordptb", {"DiscordPTB", "PTB", false} },
+		{ home / ".var/app/com.discordapp.Discord/config/discord", {"Discord", "Stable", true} },
+		{ home / ".var/app/com.discordapp.DiscordCanary/config/discord", {"DiscordCanary", "Canary", true} },
+		{ home / ".var/app/com.discordapp.DiscordPTB/config/discord", {"DiscordPTB", "PTB", true} }
 		#endif
 	};
 
