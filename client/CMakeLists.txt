@@ -22,22 +22,23 @@ find_package(Qt6 CONFIG REQUIRED COMPONENTS
 qt_standard_project_setup()
 
 qt_add_executable(${PROJECT_NAME}
-    src/main.cpp
-    src/launch.cpp
-    src/network.cpp
-    src/paths/paths.cpp
+	src/main.cpp
+	src/launch.cpp
+	src/network.cpp
+	src/paths/paths.cpp
+	../shared/shared.cpp
 )
 
 qt_add_qml_module(${PROJECT_NAME}
-    URI ${PROJECT_NAME}
-    VERSION 1.0
+	URI ${PROJECT_NAME}
+	VERSION 1.0
 
-    QML_FILES 
+	QML_FILES 
 		qml/Main.qml
 
-    RESOURCES
-        resources/canary.svg
-        resources/stable.svg
+	RESOURCES
+		resources/canary.svg
+		resources/stable.svg
 		resources/development.svg
 		resources/icon.ico
 		resources/icon.png
@@ -63,18 +64,18 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 if(MINGW)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        WIN32_EXECUTABLE TRUE
-    )
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		WIN32_EXECUTABLE TRUE
+	)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    if(LINUX)
-        target_link_options(${PROJECT_NAME} PRIVATE
-            -Wl,--gc-sections
-            -Wl,--strip-all
-        )
-    endif()
+	if(LINUX)
+		target_link_options(${PROJECT_NAME} PRIVATE
+			-Wl,--gc-sections
+			-Wl,--strip-all
+		)
+	endif()
 endif()
 
 # =========================

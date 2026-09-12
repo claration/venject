@@ -42,7 +42,8 @@ int uv_fs_lstat(const void *loop, const void *req, const char *path, void *buf)
 		buf);
 }
 
-extern "C" int __xstat64(int version, const char *path, struct stat64 *out)
+extern "C" 
+int __xstat64(int version, const char *path, struct stat64 *out)
 {
 	if (!original_xstat64)
 		original_xstat64 = resolve<xstat64_t>("__xstat64");
@@ -55,7 +56,8 @@ extern "C" int __xstat64(int version, const char *path, struct stat64 *out)
 		out);
 }
 
-extern "C" int open64(const char *path, int flags, ...)
+extern "C" 
+int open64(const char *path, int flags, ...)
 {
 	if (!original_open64)
 		original_open64 = resolve<open64_t>("open64");
@@ -82,7 +84,8 @@ extern "C" int open64(const char *path, int flags, ...)
 	return result;
 }
 
-extern "C" int openat64(int dirfd, const char *path, int flags, ...)
+extern "C" 
+int openat64(int dirfd, const char *path, int flags, ...)
 {
 	if (!original_openat64)
 		original_openat64 = resolve<openat64_t>("openat64");
@@ -112,7 +115,8 @@ extern "C" int openat64(int dirfd, const char *path, int flags, ...)
 	return result;
 }
 
-__attribute__((constructor)) void init()
+__attribute__((constructor)) 
+void init()
 {
 	void *target = dlsym(
 		RTLD_DEFAULT,

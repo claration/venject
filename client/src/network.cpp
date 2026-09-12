@@ -13,6 +13,7 @@
 
 #include "globals.h"
 #include "paths/paths.hpp"
+#include "../../shared/shared.hpp"
 
 namespace
 {
@@ -21,7 +22,8 @@ UpdateResult fail(const QString &error)
 {
 	return {
 		.success = false,
-		.error	 = error};
+		.error	 = error
+	};
 }
 
 QNetworkReply *get(
@@ -29,9 +31,7 @@ QNetworkReply *get(
 	const QUrl			  &url,
 	int					   redirectCount = 0)
 {
-	if (redirectCount > 5) {
-		return nullptr;
-	}
+	if (redirectCount > 5) return nullptr;
 
 	QNetworkRequest request(url);
 	request.setHeader(QNetworkRequest::UserAgentHeader, MOD_NAME);
@@ -55,8 +55,8 @@ QNetworkReply *get(
 	}
 
 	const auto status = reply->attribute(
-								 QNetworkRequest::HttpStatusCodeAttribute)
-							.toInt();
+		QNetworkRequest::HttpStatusCodeAttribute
+	).toInt();
 
 	if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
 		QUrl redirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
@@ -80,8 +80,8 @@ bool successful(QNetworkReply *reply)
 		return false;
 
 	const auto status = reply->attribute(
-								 QNetworkRequest::HttpStatusCodeAttribute)
-							.toInt();
+		QNetworkRequest::HttpStatusCodeAttribute
+	).toInt();
 
 	return status >= 200 && status < 300;
 }
@@ -95,18 +95,14 @@ UpdateResult parseRelease(
 	const auto json = QJsonDocument::fromJson(data, &error);
 	if (error.error != QJsonParseError::NoError)
 		return fail(error.errorString());
-
-	if (!json.isObject())
-		return fail("Invalid GitHub response");
+	if (!json.isObject()) return fail("Invalid GitHub response");
 
 	const auto name	 = json.object()["name"].toString().trimmed();
 	const auto index = name.lastIndexOf(' ');
-	if (index < 0)
-		return fail("Invalid release name");
+	if (index < 0) return fail("Invalid release name");
 
 	const auto latest = name.mid(index + 1).trimmed();
-	if (latest.isEmpty())
-		return fail("Invalid release hash");
+	if (latest.isEmpty()) return fail("Invalid release hash");
 
 	return {
 		.success	   = true,
@@ -128,29 +124,26 @@ UpdateResult downloadAsset(
 
 	if (!successful(reply)) {
 		const auto error = reply ? reply->errorString() : "Unknown network error";
-		if (reply)
-			reply->deleteLater();
-
+		if (reply) reply->deleteLater();
 		return fail(QString("Failed to download %1: %2").arg(name, error));
 	}
 
 	const auto data = reply->readAll();
 	reply->deleteLater();
-	if (data.isEmpty())
+	if (data.isEmpty()) 
 		return fail("Downloaded file is empty: " + name);
 
 	QFile file(dir.filePath(name));
 
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
 		return fail(QString("Failed to write %1: %2").arg(name, file.errorString()));
-	}
 
-	if (file.write(data) != data.size()) {
+	if (file.write(data) != data.size())
 		return fail(QString("Failed to write %1: %2").arg(name, file.errorString()));
-	}
 
 	return {
-		.success = true};
+		.success = true
+	};
 }
 
 } // namespace
@@ -160,13 +153,11 @@ namespace network
 
 QString installedHash()
 {
-	QFile file(paths::ModEntrypointPath());
-	if (!file.open(QIODevice::ReadOnly))
-		return "None";
+	QFile file(shared::ModEntrypointPath());
+	if (!file.open(QIODevice::ReadOnly)) return "None";
 
 	const auto line = QString::fromUtf8(file.readLine()).trimmed();
-	if (!line.startsWith(MOD_VERSION_PREFIX))
-		return "None";
+	if (!line.startsWith(MOD_VERSION_PREFIX)) return "None";
 
 	return line
 		.mid(QString(MOD_VERSION_PREFIX).size())
@@ -183,8 +174,7 @@ UpdateResult CheckForUpdates()
 
 	if (!successful(reply)) {
 		const auto error = reply ? reply->errorString() : "Unknown network error";
-		if (reply)
-			reply->deleteLater();
+		if (reply) reply->deleteLater();
 		return fail(error);
 	}
 
@@ -203,8 +193,7 @@ UpdateResult DownloadLatest()
 
 	if (!successful(reply)) {
 		const auto error = reply ? reply->errorString() : "Unknown network error";
-		if (reply)
-			reply->deleteLater();
+		if (reply) reply->deleteLater();
 		return fail(error);
 	}
 
@@ -212,17 +201,14 @@ UpdateResult DownloadLatest()
 	reply->deleteLater();
 
 	const auto json = QJsonDocument::fromJson(data);
-	if (!json.isObject())
-		return fail("Invalid GitHub response");
+	if (!json.isObject()) return fail("Invalid GitHub response");
 
 	const auto assets = json.object()["assets"].toArray();
-	if (assets.isEmpty())
-		return fail("No release assets found");
+	if (assets.isEmpty()) return fail("No release assets found");
 
-	QDir dir(paths::ModDistPath());
-	if (!dir.exists() && !dir.mkpath(".")) {
+	QDir dir(shared::ModDistPath());
+	if (!dir.exists() && !dir.mkpath("."))
 		return fail("Failed to create target directory: " + dir.path());
-	}
 
 	static const QStringList required = {
 		"patcher.js",
@@ -236,8 +222,7 @@ UpdateResult DownloadLatest()
 		const auto asset = value.toObject();
 
 		const auto name = asset["name"].toString();
-		if (!required.contains(name))
-			continue;
+		if (!required.contains(name)) continue;
 
 		const auto downloadUrlStr = asset["browser_download_url"].toString();
 		const QUrl url(downloadUrlStr);
@@ -251,13 +236,13 @@ UpdateResult DownloadLatest()
 	}
 
 	for (const auto &name : required) {
-		if (!found.contains(name)) {
+		if (!found.contains(name))
 			return fail("Missing required asset: " + name);
-		}
 	}
 
 	return {
-		.success = true};
+		.success = true
+	};
 }
 
 } // namespace network

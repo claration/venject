@@ -9,6 +9,7 @@
 
 #include "network.hpp"
 #include "paths/paths.hpp"
+#include "../../shared/shared.hpp"
 
 Launcher::Launcher(QObject *parent) : QObject(parent)
 {
@@ -35,7 +36,7 @@ void Launcher::launch_self(
 		args.append(entry_point_path);
 	}
 
-	process.setProgram(QString::fromStdString(paths::OurExecutablePath().string()));
+	process.setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
 	process.setArguments(args);
 	process.startDetached();
 }
@@ -54,14 +55,11 @@ void Launcher::launch(
 	// injected with arbritrary .dll files
 	QProcess process;
 
-	// TODO: pass more environment variables to the library
-	// things such as temporary directory path
 	auto environment = QProcessEnvironment::systemEnvironment();
 	environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
-	environment.insert("MODLOADER_MOD_ENTRYPOINT", QString::fromStdString(paths::ModEntrypointPath().string()));
-	environment.insert("MODLOADER_EXECUTABLE", QString::fromStdString(paths::OurExecutablePath().string()));
-	environment.insert("MODLOADER_PROCESS_ARGV", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
-	environment.insert("MODLOADER_WM_CLASS", QString::fromStdString("vencord-canary"));
+	environment.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
+	environment.insert("CLIENT_JS_PATH", QString::fromStdString(shared::ModEntrypointPath().string()));
+	environment.insert("CLIENT_ARGV_JSON", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
 	environment.insert("LD_PRELOAD", QString::fromStdString(paths::OurHookLibraryPath().string()));
 
 	process.setProcessEnvironment(environment);
@@ -79,9 +77,7 @@ QVariantList Launcher::findDiscords()
 
 		item["path"]			 = QString::fromStdString(discord.path.string());
 		item["branch"]			 = QString::fromStdString(discord.branch);
-		item["isPatched"]		 = discord.isPatched;
 		item["isFlatpak"]		 = discord.isFlatpak;
-		item["isSystemElectron"] = discord.isSystemElectron;
 
 		discordList.append(item);
 	}

@@ -11,6 +11,4 @@ typedef struct {
 
 extern payload_t g_payload_asar;
 
-#define VENJECT_ASAR_PATH "/tmp/vencord.asar"
-
 #endif // VENJECT__GLOBALS_H
