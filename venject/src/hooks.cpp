@@ -1,4 +1,4 @@
-#ifdef __APPLE__
+﻿#ifdef __APPLE__
 #error "Apple is not supported"
 #elif defined(__linux__)
 
@@ -134,6 +134,107 @@ void init()
 } // namespace
 
 #else // _WIN32
+
+#include <string>
+#include <utils.hpp>
+
+#include <windows.h>
+#include <detours.h>
+#include <shobjidl.h>
+
+using get_file_attributes_w_t = DWORD (*) (LPCWSTR);
+using create_file_w_t = HANDLE (*) (LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
+using move_file_ex_w_t = BOOL (*) (LPCWSTR, LPCWSTR, DWORD);
+using create_process_w_t = WINBOOL (*) (LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
+using set_aumid_t = HRESULT (*) (PCWSTR);
+
+static get_file_attributes_w_t original_get_file_attributes_w_t = nullptr;
+static create_file_w_t original_create_file_w = nullptr;
+static move_file_ex_w_t original_move_file_ex_w = nullptr;
+static create_process_w_t original_create_process_w = nullptr;
+static set_aumid_t original_set_aumid = nullptr;
+
+#define ERROR_HOOKING_MSG(msg) \
+MessageBoxA(               \
+                           NULL,                  \
+                           (msg),                 \
+                           "Error Hooking",       \
+                           MB_OK                  \
+    )
+
+#define ATTACH(orig, target)                                      \
+{                                                          \
+        LONG result = DetourAttach(&(PVOID&)#orig, (PVOID)(target)); \
+        if (result != 0) {                                        \
+            ERROR_HOOKING_MSG("Failed to hook " #orig             \
+                              ". Please report this issue.");     \
+            DetourTransactionAbort();                             \
+            return 1;                                             \
+    }                                                         \
+}
+
+std::string lpcwstr_to_string(LPCWSTR lpcwszStr)
+{
+	int strLength = WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, nullptr, 0, nullptr, nullptr);
+	std::string str(strLength, 0);
+
+	WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, &str[0], strLength, nullptr, nullptr);
+
+	return str;
+}
+
+extern "C" DWORD get_file_attributes_w(LPCWSTR lp_file_name)
+{
+	if (lp_file_name)
+	{
+		return original_get_file_attributes_w_t(lp_file_name);
+	}
+
+	std::string str = lpcwstr_to_string(lp_file_name);
+	auto redirected = utils::redirect(str.c_str());
+
+	if (!redirected.empty())
+	{
+		std::wstring wstring{redirected.begin(), redirected.end()};
+		return original_get_file_attributes_w_t(wstring.c_str());
+	}
+	else
+	{
+		return original_get_file_attributes_w_t(lp_file_name);
+	}
+}
+
+BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
+{
+    if (DetourIsHelperProcess())
+    {
+        return TRUE;
+    }
+
+    if (fwdReason != DLL_PROCESS_ATTACH)
+    {
+        return 1;
+    }
+
+	original_get_file_attributes_w_t = GetFileAttributesW;
+	original_create_file_w = CreateFileW;
+	original_move_file_ex_w = MoveFileExW;
+	original_create_process_w = CreateProcessW;
+	original_set_aumid = SetCurrentProcessExplicitAppUserModelID;
+
+	ATTACH(GetFileAttributesW, get_file_attributes_w)
+
+    DetourRestoreAfterWith();
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+#ifdef _DEBUG
+    AllocConsole();
+#endif
+
+    return TRUE;
+}
 
 // TODO: use detours instead of dobby for windows
 // use this as a reference https://github.com/MeguminSama/Electron-Hook/blob/main/src/windows/hooks.rs
