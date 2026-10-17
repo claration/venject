@@ -1,5 +1,4 @@
 embedded/app.asar
 scripts/asar_pack
 scripts/asar_pack.exe
-src/gen
 test.sh
