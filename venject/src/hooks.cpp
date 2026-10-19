@@ -144,18 +144,17 @@ void init()
 
 namespace fs = std::filesystem;
 
-using get_file_attributes_w_t = DWORD (*) (LPCWSTR);
-using create_file_w_t = HANDLE (*) (LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
-using move_file_ex_w_t = BOOL (*) (LPCWSTR, LPCWSTR, DWORD);
-using create_process_w_t = WINBOOL (*) (LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
+using get_file_attributes_w_t 	= DWORD   (*) (LPCWSTR);
+using create_file_w_t 			= HANDLE  (*) (LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
+using move_file_ex_w_t 			= BOOL 	  (*) (LPCWSTR, LPCWSTR, DWORD);
+using create_process_w_t 		= WINBOOL (*) (LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
+using uv_fs_lstat_t 			= int (*) (const void *, const void *, const char *, void *);
 
-static get_file_attributes_w_t original_get_file_attributes_w_t = nullptr;
-static create_file_w_t original_create_file_w = nullptr;
-static move_file_ex_w_t original_move_file_ex_w = nullptr;
-static create_process_w_t original_create_process_w = nullptr;
-using uv_fs_lstat_t = int (*) (const void *, const void *, const char *, void *);
-
-static uv_fs_lstat_t original_uv_fs_lstat = nullptr;
+static get_file_attributes_w_t 	original_get_file_attributes_w_t 	= nullptr;
+static create_file_w_t 			original_create_file_w 				= nullptr;
+static move_file_ex_w_t 		original_move_file_ex_w 			= nullptr;
+static create_process_w_t 		original_create_process_w 			= nullptr;
+static uv_fs_lstat_t 			original_uv_fs_lstat 				= nullptr;
 
 #define ERROR_HOOKING_MSG(msg) \
 MessageBoxA(               \
@@ -212,10 +211,8 @@ fs::path get_dll_path()
 
 extern "C" DWORD get_file_attributes_w(LPCWSTR lp_file_name)
 {
-	if (!lp_file_name)
-	{
+	if (!lp_file_name) 
 		return original_get_file_attributes_w_t(lp_file_name);
-	}
 
 	std::string str = lpcwstr_to_string(lp_file_name);
 	auto redirected = utils::redirect(str.c_str());
@@ -358,10 +355,8 @@ std::string get_executable_filename()
 
 extern "C" int uv_fs_lstat_hook(const void *loop, const void *req, const char *path, void *cb)
 {
-	if (!original_uv_fs_lstat)
-		return -1;
-	if (!path)
-		return original_uv_fs_lstat(loop, req, path, cb);
+	if (!original_uv_fs_lstat) return -1;
+	if (!path) return original_uv_fs_lstat(loop, req, path, cb);
 
 	auto redirected = utils::redirect(path);
 	const char *target = redirected.empty() ? path : redirected.c_str();
