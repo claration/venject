@@ -136,23 +136,26 @@ void init()
 #else // _WIN32
 
 #include <string>
-#include <utils.hpp>
+#include <string_view>
+#include <filesystem>
+#include <iostream>
 
 #include <windows.h>
 #include <detours.h>
-#include <shobjidl.h>
+
+#include "utils.hpp"
+
+namespace fs = std::filesystem;
 
 using get_file_attributes_w_t = DWORD (*) (LPCWSTR);
 using create_file_w_t = HANDLE (*) (LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
 using move_file_ex_w_t = BOOL (*) (LPCWSTR, LPCWSTR, DWORD);
 using create_process_w_t = WINBOOL (*) (LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
-using set_aumid_t = HRESULT (*) (PCWSTR);
 
 static get_file_attributes_w_t original_get_file_attributes_w_t = nullptr;
 static create_file_w_t original_create_file_w = nullptr;
 static move_file_ex_w_t original_move_file_ex_w = nullptr;
 static create_process_w_t original_create_process_w = nullptr;
-static set_aumid_t original_set_aumid = nullptr;
 
 #define ERROR_HOOKING_MSG(msg) \
 MessageBoxA(               \
@@ -164,7 +167,7 @@ MessageBoxA(               \
 
 #define ATTACH(orig, target)                                      \
 {                                                          \
-        LONG result = DetourAttach(&(PVOID&)#orig, (PVOID)(target)); \
+		LONG result = DetourAttach(&(PVOID&)orig, (PVOID)(target)); \
         if (result != 0) {                                        \
             ERROR_HOOKING_MSG("Failed to hook " #orig             \
                               ". Please report this issue.");     \
@@ -181,6 +184,12 @@ std::string lpcwstr_to_string(LPCWSTR lpcwszStr)
 	WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, &str[0], strLength, nullptr, nullptr);
 
 	return str;
+}
+
+fs::path get_dll_path()
+{
+	std::string dll_path_str{std::getenv("HOOK_DLL_PATH")};
+	return dll_path_str;
 }
 
 extern "C" DWORD get_file_attributes_w(LPCWSTR lp_file_name)
@@ -204,6 +213,82 @@ extern "C" DWORD get_file_attributes_w(LPCWSTR lp_file_name)
 	}
 }
 
+extern "C" HANDLE create_file_w(LPCWSTR lp_file_name, DWORD dw_desired_access, DWORD dw_share_mode, LPSECURITY_ATTRIBUTES lp_security_attributes, DWORD dw_creation_disposition, DWORD dw_flags_and_attributes, HANDLE h_template_file)
+{
+	if (lp_file_name)
+	{
+		return original_create_file_w(lp_file_name, dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
+	}
+
+	std::string str = lpcwstr_to_string(lp_file_name);
+	auto redirected = utils::redirect(str.c_str());
+
+	if (!redirected.empty())
+	{
+		std::wstring wstring{redirected.begin(), redirected.end()};
+		return original_create_file_w(wstring.c_str(), dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
+	}
+	else
+	{
+		return original_create_file_w(lp_file_name, dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
+	}
+}
+
+extern "C" BOOL move_file_ex_w(LPCWSTR lp_existing_file, LPCWSTR lp_new_file_name, DWORD dw_flags)
+{
+	std::wstring new_file_name{lp_new_file_name};
+
+	std::wstring_view app_asar_str{L"\\_app.asar"};
+	std::wstring::size_type app_asar_pos = new_file_name.find(app_asar_str);
+	if (app_asar_pos != std::wstring::npos)
+	{
+		std::wstring redirect_to = new_file_name.replace(app_asar_pos, app_asar_str.size(), L"\\app.asar");
+		return original_move_file_ex_w(lp_existing_file, redirect_to.c_str(), dw_flags);
+	}
+
+	return original_move_file_ex_w(lp_existing_file, lp_new_file_name, dw_flags);
+}
+
+extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_line, LPSECURITY_ATTRIBUTES lp_process_attributes, LPSECURITY_ATTRIBUTES lp_thread_attributes, BOOL b_inherit_handles, DWORD dw_creation_flags, LPVOID lp_environment, LPCWSTR lp_current_directory, LPSTARTUPINFOW lp_startup_info, LPPROCESS_INFORMATION lp_process_information)
+{
+	if (!lp_command_line)
+	{
+		return original_create_process_w(lp_application_name, lp_command_line, lp_process_attributes, lp_thread_attributes, b_inherit_handles, dw_creation_flags, lp_environment, lp_current_directory, lp_startup_info, lp_process_information);
+	}
+
+	std::wstring command_line{lp_command_line};
+	if (command_line.contains(L"--") && !command_line.contains(L"--type=renderer"))
+	{
+		return original_create_process_w(lp_application_name, lp_command_line, lp_process_attributes, lp_thread_attributes, b_inherit_handles, dw_creation_flags, lp_environment, lp_current_directory, lp_startup_info, lp_process_information);
+	}
+
+	std::string dll_path = get_dll_path().string();
+
+	BOOL success = DetourCreateProcessWithDllW(
+		lp_application_name,
+		lp_command_line,
+		lp_process_attributes,
+		lp_thread_attributes,
+		b_inherit_handles,
+		dw_creation_flags,
+		lp_environment,
+		lp_current_directory,
+		lp_startup_info,
+		lp_process_information,
+		dll_path.c_str(),
+		original_create_process_w
+		);
+
+	if (success != 1)
+	{
+		std::cerr << "[venject] Failed to create process" << std::endl;
+		return success;
+	}
+
+	ResumeThread(lp_process_information->hThread);
+	return success;
+}
+
 BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
 {
     if (DetourIsHelperProcess())
@@ -220,9 +305,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
 	original_create_file_w = CreateFileW;
 	original_move_file_ex_w = MoveFileExW;
 	original_create_process_w = CreateProcessW;
-	original_set_aumid = SetCurrentProcessExplicitAppUserModelID;
-
-	ATTACH(GetFileAttributesW, get_file_attributes_w)
 
     DetourRestoreAfterWith();
 
@@ -232,6 +314,13 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
 #ifdef _DEBUG
     AllocConsole();
 #endif
+
+	ATTACH(GetFileAttributesW, get_file_attributes_w)
+	ATTACH(CreateFileW, create_file_w)
+	ATTACH(MoveFileExW, move_file_ex_w)
+	ATTACH(CreateProcessW, create_process_w)
+
+	DetourTransactionCommit();
 
     return TRUE;
 }
