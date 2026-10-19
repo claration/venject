@@ -19,6 +19,4 @@ package: build
 	cpack --config build/CPackConfig.cmake -C $(BUILD_TYPE)
 
 clean:
-	$(MAKE) -C venject clean
-	$(MAKE) -C venject/scripts clean
 	rm -rf build
