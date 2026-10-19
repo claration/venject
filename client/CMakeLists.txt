@@ -29,7 +29,11 @@ qt_add_executable(${PROJECT_NAME}
 	../shared/shared.cpp
 )
 
+set_source_files_properties(qml/Main.qml PROPERTIES QT_RESOURCE_ALIAS Main.qml)
 set_source_files_properties(qml/LaunchHelper.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/DiscordItem.qml PROPERTIES QT_RESOURCE_ALIAS DiscordItem.qml)
+set_source_files_properties(qml/DiscordColumn.qml PROPERTIES QT_RESOURCE_ALIAS DiscordColumn.qml)
+set_source_files_properties(qml/Footer.qml PROPERTIES QT_RESOURCE_ALIAS Footer.qml)
 
 qt_add_qml_module(${PROJECT_NAME}
 	URI ${PROJECT_NAME}

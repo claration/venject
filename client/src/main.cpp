@@ -89,6 +89,6 @@ int main(int argc, char **argv)
 		[]() { QCoreApplication::exit(-1); },
 		Qt::QueuedConnection);
 
-	engine.load(QUrl(QStringLiteral("qrc:/VencordLauncher/qml/Main.qml")));
+	engine.load(QUrl(QStringLiteral("qrc:/VencordLauncher/Main.qml")));
 	return app.exec();
 }
