@@ -37,13 +37,13 @@ set(QML_FILES
         qml/Footer.qml)
 
 foreach (QML_FILE IN LISTS QML_FILES)
-    string(REPLACE "qml/" "" TRANSFORMED_PATH "${REL}")
+    string(REPLACE "qml/" "" TRANSFORMED_PATH "${QML_FILE}")
     message(STATUS "Registering QML file: ${QML_FILE}")
     set_source_files_properties(${QML_FILE} PROPERTIES QT_RESOURCE_ALIAS
             "${TRANSFORMED_PATH}")
 endforeach ()
 
-set_source_files_properties(qml/Main.qml PROPERTIES QT_RESOURCE_ALIAS Main.qml)
+set_source_files_properties(qml/LaunchHelper.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(${PROJECT_NAME}
 	URI ${PROJECT_NAME}
