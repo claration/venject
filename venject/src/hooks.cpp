@@ -135,6 +135,7 @@ void init()
 
 #else // _WIN32
 
+#include <cstdlib>
 #include <string>
 #include <string_view>
 #include <filesystem>
@@ -156,6 +157,9 @@ static get_file_attributes_w_t original_get_file_attributes_w_t = nullptr;
 static create_file_w_t original_create_file_w = nullptr;
 static move_file_ex_w_t original_move_file_ex_w = nullptr;
 static create_process_w_t original_create_process_w = nullptr;
+using uv_fs_lstat_t = int (*) (const void *, const void *, const char *, void *);
+
+static uv_fs_lstat_t original_uv_fs_lstat = nullptr;
 
 #define ERROR_HOOKING_MSG(msg) \
 MessageBoxA(               \
@@ -172,29 +176,47 @@ MessageBoxA(               \
             ERROR_HOOKING_MSG("Failed to hook " #orig             \
                               ". Please report this issue.");     \
             DetourTransactionAbort();                             \
-            return 1;                                             \
+            return FALSE;                                             \
     }                                                         \
 }
 
 std::string lpcwstr_to_string(LPCWSTR lpcwszStr)
 {
+	if (!lpcwszStr)
+		return {};
 	int strLength = WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, nullptr, 0, nullptr, nullptr);
-	std::string str(strLength, 0);
-
-	WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, &str[0], strLength, nullptr, nullptr);
-
+	if (strLength <= 0)
+		return {};
+	std::string str(static_cast<size_t>(strLength), 0);
+	WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, str.data(), strLength, nullptr, nullptr);
+	str.resize(static_cast<size_t>(strLength) - 1);
 	return str;
+}
+
+std::wstring utf8_to_wstring(const std::string &utf8)
+{
+	if (utf8.empty())
+		return {};
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+	if (wlen <= 0)
+		return {};
+	std::wstring wstr(static_cast<size_t>(wlen), 0);
+	MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wstr.data(), wlen);
+	wstr.resize(static_cast<size_t>(wlen) - 1);
+	return wstr;
 }
 
 fs::path get_dll_path()
 {
-	std::string dll_path_str{std::getenv("HOOK_DLL_PATH")};
-	return dll_path_str;
+	const char *env = std::getenv("HOOK_DLL_PATH");
+	if (!env || env[0] == 0)
+		return {};
+	return fs::path(env);
 }
 
 extern "C" DWORD get_file_attributes_w(LPCWSTR lp_file_name)
 {
-	if (lp_file_name)
+	if (!lp_file_name)
 	{
 		return original_get_file_attributes_w_t(lp_file_name);
 	}
@@ -204,18 +226,17 @@ extern "C" DWORD get_file_attributes_w(LPCWSTR lp_file_name)
 
 	if (!redirected.empty())
 	{
-		std::wstring wstring{redirected.begin(), redirected.end()};
-		return original_get_file_attributes_w_t(wstring.c_str());
+		std::wstring redirected_w = utf8_to_wstring(redirected);
+		if (!redirected_w.empty())
+			return original_get_file_attributes_w_t(redirected_w.c_str());
 	}
-	else
-	{
-		return original_get_file_attributes_w_t(lp_file_name);
-	}
+
+	return original_get_file_attributes_w_t(lp_file_name);
 }
 
 extern "C" HANDLE create_file_w(LPCWSTR lp_file_name, DWORD dw_desired_access, DWORD dw_share_mode, LPSECURITY_ATTRIBUTES lp_security_attributes, DWORD dw_creation_disposition, DWORD dw_flags_and_attributes, HANDLE h_template_file)
 {
-	if (lp_file_name)
+	if (!lp_file_name)
 	{
 		return original_create_file_w(lp_file_name, dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
 	}
@@ -225,28 +246,44 @@ extern "C" HANDLE create_file_w(LPCWSTR lp_file_name, DWORD dw_desired_access, D
 
 	if (!redirected.empty())
 	{
-		std::wstring wstring{redirected.begin(), redirected.end()};
-		return original_create_file_w(wstring.c_str(), dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
+		std::wstring redirected_w = utf8_to_wstring(redirected);
+		if (!redirected_w.empty())
+			return original_create_file_w(redirected_w.c_str(), dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
 	}
-	else
-	{
-		return original_create_file_w(lp_file_name, dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
-	}
+
+	return original_create_file_w(lp_file_name, dw_desired_access, dw_share_mode, lp_security_attributes, dw_creation_disposition, dw_flags_and_attributes, h_template_file);
 }
 
 extern "C" BOOL move_file_ex_w(LPCWSTR lp_existing_file, LPCWSTR lp_new_file_name, DWORD dw_flags)
 {
-	std::wstring new_file_name{lp_new_file_name};
+	LPCWSTR existing_target = lp_existing_file;
+	LPCWSTR new_target = lp_new_file_name;
+	std::wstring existing_redirected_w;
+	std::wstring new_redirected_w;
 
-	std::wstring_view app_asar_str{L"\\_app.asar"};
-	std::wstring::size_type app_asar_pos = new_file_name.find(app_asar_str);
-	if (app_asar_pos != std::wstring::npos)
+	if (lp_existing_file)
 	{
-		std::wstring redirect_to = new_file_name.replace(app_asar_pos, app_asar_str.size(), L"\\app.asar");
-		return original_move_file_ex_w(lp_existing_file, redirect_to.c_str(), dw_flags);
+		auto redirected = utils::redirect(lpcwstr_to_string(lp_existing_file).c_str());
+		if (!redirected.empty())
+		{
+			existing_redirected_w = utf8_to_wstring(redirected);
+			if (!existing_redirected_w.empty())
+				existing_target = existing_redirected_w.c_str();
+		}
 	}
 
-	return original_move_file_ex_w(lp_existing_file, lp_new_file_name, dw_flags);
+	if (lp_new_file_name)
+	{
+		auto redirected = utils::redirect(lpcwstr_to_string(lp_new_file_name).c_str());
+		if (!redirected.empty())
+		{
+			new_redirected_w = utf8_to_wstring(redirected);
+			if (!new_redirected_w.empty())
+				new_target = new_redirected_w.c_str();
+		}
+	}
+
+	return original_move_file_ex_w(existing_target, new_target, dw_flags);
 }
 
 extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_line, LPSECURITY_ATTRIBUTES lp_process_attributes, LPSECURITY_ATTRIBUTES lp_thread_attributes, BOOL b_inherit_handles, DWORD dw_creation_flags, LPVOID lp_environment, LPCWSTR lp_current_directory, LPSTARTUPINFOW lp_startup_info, LPPROCESS_INFORMATION lp_process_information)
@@ -257,12 +294,19 @@ extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_
 	}
 
 	std::wstring command_line{lp_command_line};
-	if (command_line.contains(L"--") && !command_line.contains(L"--type=renderer"))
+	// Inject into the main process (no -- flags) and renderers, skip other --type= helpers.
+	if (command_line.find(L"--") != std::wstring::npos && command_line.find(L"--type=renderer") == std::wstring::npos)
 	{
 		return original_create_process_w(lp_application_name, lp_command_line, lp_process_attributes, lp_thread_attributes, b_inherit_handles, dw_creation_flags, lp_environment, lp_current_directory, lp_startup_info, lp_process_information);
 	}
 
-	std::string dll_path = get_dll_path().string();
+	fs::path dll_fs_path = get_dll_path();
+	if (dll_fs_path.empty())
+	{
+		return original_create_process_w(lp_application_name, lp_command_line, lp_process_attributes, lp_thread_attributes, b_inherit_handles, dw_creation_flags, lp_environment, lp_current_directory, lp_startup_info, lp_process_information);
+	}
+
+	std::string dll_path = dll_fs_path.string();
 
 	BOOL success = DetourCreateProcessWithDllW(
 		lp_application_name,
@@ -279,26 +323,63 @@ extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_
 		original_create_process_w
 		);
 
-	if (success != 1)
+	if (!success)
 	{
 		std::cerr << "[venject] Failed to create process" << std::endl;
 		return success;
 	}
 
-	ResumeThread(lp_process_information->hThread);
+	// DetourCreateProcessWithDllW leaves the process suspended, so resume it.
+	// If the caller passed CREATE_SUSPENDED the thread stays suspended as intended.
+	if (lp_process_information && lp_process_information->hThread)
+		ResumeThread(lp_process_information->hThread);
 	return success;
 }
 
-BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
+std::string get_executable_filename()
+{
+	std::string buf(260, 0);
+	for (;;)
+	{
+		DWORD len = GetModuleFileNameA(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
+		if (len == 0)
+			return {};
+		if (len < buf.size())
+		{
+			buf.resize(len);
+			break;
+		}
+		if (buf.size() >= 32768)
+			return {};
+		buf.resize(buf.size() * 2, 0);
+	}
+	if (buf.empty())
+		return {};
+	return fs::path(buf).filename().string();
+}
+
+extern "C" int uv_fs_lstat_hook(const void *loop, const void *req, const char *path, void *cb)
+{
+	if (!original_uv_fs_lstat)
+		return -1;
+	if (!path)
+		return original_uv_fs_lstat(loop, req, path, cb);
+
+	auto redirected = utils::redirect(path);
+	const char *target = redirected.empty() ? path : redirected.c_str();
+	return original_uv_fs_lstat(loop, req, target, cb);
+}
+
+BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
 {
     if (DetourIsHelperProcess())
     {
         return TRUE;
     }
 
-    if (fwdReason != DLL_PROCESS_ATTACH)
+    if (fdwReason != DLL_PROCESS_ATTACH)
     {
-        return 1;
+        return TRUE;
     }
 
 	original_get_file_attributes_w_t = GetFileAttributesW;
@@ -308,24 +389,65 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
 
     DetourRestoreAfterWith();
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    if (DetourTransactionBegin() != NO_ERROR)
+        return FALSE;
+    if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
+    {
+        DetourTransactionAbort();
+        return FALSE;
+    }
 
 #ifdef _DEBUG
     AllocConsole();
 #endif
 
-	ATTACH(GetFileAttributesW, get_file_attributes_w)
-	ATTACH(CreateFileW, create_file_w)
-	ATTACH(MoveFileExW, move_file_ex_w)
-	ATTACH(CreateProcessW, create_process_w)
+	ATTACH(original_get_file_attributes_w_t, get_file_attributes_w)
+	ATTACH(original_create_file_w, create_file_w)
+	ATTACH(original_move_file_ex_w, move_file_ex_w)
+	ATTACH(original_create_process_w, create_process_w)
 
-	DetourTransactionCommit();
+	// Best-effort libuv hook (mirrors Rust reference):
+	// GetModuleHandleA(current_exe_filename) + GetProcAddress("uv_fs_lstat").
+	// Optional: if the symbol is missing we keep the main hooks and stay loaded.
+    {
+        std::string exe_name = get_executable_filename();
+        HMODULE exe_mod = nullptr;
+        if (!exe_name.empty())
+            exe_mod = GetModuleHandleA(exe_name.c_str());
+        if (!exe_mod)
+            exe_mod = GetModuleHandleA(nullptr);
+        if (exe_mod)
+        {
+            FARPROC proc = GetProcAddress(exe_mod, "uv_fs_lstat");
+            if (proc)
+            {
+                original_uv_fs_lstat = reinterpret_cast<uv_fs_lstat_t>(proc);
+                bool uv_committed = false;
+                if (DetourTransactionBegin() == NO_ERROR)
+                {
+                    if (DetourUpdateThread(GetCurrentThread()) == NO_ERROR)
+                    {
+                        LONG uv_res = DetourAttach(&(PVOID &)original_uv_fs_lstat, (PVOID)uv_fs_lstat_hook);
+                        if (uv_res == NO_ERROR)
+                            uv_committed = (DetourTransactionCommit() == NO_ERROR);
+                        else
+                            DetourTransactionAbort();
+                    }
+                    else
+                        DetourTransactionAbort();
+                }
+                if (!uv_committed)
+                    original_uv_fs_lstat = nullptr;
+            }
+        }
+    }
+
+	if (DetourTransactionCommit() != NO_ERROR)
+		return FALSE;
 
     return TRUE;
 }
 
-// TODO: use detours instead of dobby for windows
 // use this as a reference https://github.com/MeguminSama/Electron-Hook/blob/main/src/windows/hooks.rs
 
 #endif

@@ -12,16 +12,7 @@ include(FetchContent)
 # =========================
 # MARK: CMAKE DEPENDENCIES
 # =========================
-
-if(MINGW)
-	FetchContent_Declare(
-		Detours
-		GIT_REPOSITORY https://github.com/0xeb/detours-cmake.git
-		GIT_TAG master
-	)
-
-	FetchContent_MakeAvailable(Detours)
-else()
+if(NOT MINGW)
 	find_program(PATCH patch REQUIRED)
 	set(DOBBY_DEBUG OFF CACHE BOOL "" FORCE)
 	set(DOBBY_GENERATE_SHARED OFF CACHE BOOL "" FORCE)
