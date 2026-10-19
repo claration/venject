@@ -63,10 +63,7 @@ int main(int argc, char **argv)
 	if (!launch.isEmpty())
 	{
 		launcher.launch(launch, launchArg, launch_mod_argv);
-		app.exit();
-		#ifndef Q_OS_WIN
-		exit(0);
-		#endif
+		exit(0); // app.exit() is so broken
 	}
 
 	app.setOrganizationName("claration");

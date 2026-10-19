@@ -141,6 +141,7 @@ void init()
 #include <detours.h>
 
 #include "utils.hpp"
+#include "../../shared/shared.hpp" // OurExecutablePath
 
 namespace fs = std::filesystem;
 
@@ -330,29 +331,6 @@ extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_
 	return success;
 }
 
-// TODO: use shared instead
-std::string get_executable_filename()
-{
-	std::string buf(260, 0);
-	for (;;)
-	{
-		DWORD len = GetModuleFileNameA(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
-		if (len == 0) return {};
-
-		if (len < buf.size())
-		{
-			buf.resize(len);
-			break;
-		}
-		if (buf.size() >= 32768) return {};
-
-		buf.resize(buf.size() * 2, 0);
-	}
-	if (buf.empty()) return {};
-
-	return fs::path(buf).filename().string();
-}
-
 extern "C" int uv_fs_lstat_hook(const void *loop, const void *req, const char *path, void *cb)
 {
 	if (!original_uv_fs_lstat) return -1;
@@ -395,7 +373,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
 	// uv_fs_lstat needs special treatment, vencord uses it
 	// GetModuleHandleA(current_exe_filename) + GetProcAddress("uv_fs_lstat").
     {
-        std::string exe_name = get_executable_filename();
+        std::string exe_name = shared::OurExecutablePath().filename().string();
 
         HMODULE exe_mod = nullptr;
         if (!exe_name.empty()) 
