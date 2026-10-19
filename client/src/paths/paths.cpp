@@ -18,117 +18,104 @@ namespace paths
 
 std::vector<DiscordInstall> FindDiscords()
 {
-	std::vector<DiscordInstall> result;
-	std::unordered_set<std::string> seen;
+    std::vector<DiscordInstall> result;
+    std::unordered_set<std::string> seen;
 
-	fs::path home = shared::OurHomePath();
-	if (home.empty()) return result;
+    const fs::path home = shared::OurHomePath();
+    if (home.empty()) return result;
 
-	auto parseVersion = [](const std::string &name) -> std::vector<int> {
-		if (!name.starts_with("app-")) return {};
+    auto parseVersion = [](const std::string &name) {
+        std::vector<int> version;
+        if (!name.starts_with("app-")) return version;
 
-		std::vector<int> version;
-		std::string value = name.substr(4);
-		std::size_t start = 0;
+        std::istringstream stream(name.substr(4));
+        std::string part;
 
-		while (start < value.size()) {
-			const auto end = value.find('.', start);
-			const auto part = value.substr(
-				start,
-				end == std::string::npos ? std::string::npos : end - start
-			);
+        while (std::getline(stream, part, '.')) {
+            try {
+                std::size_t pos;
+                int n = std::stoi(part, &pos);
+                if (pos != part.size() || n < 0) return std::vector<int>{};
+                version.push_back(n);
+            } catch (...) {
+                return std::vector<int>{};
+            }
+        }
 
-			try {
-				version.push_back(std::stoi(part));
-			} catch (...) {
-				return {};
-			}
+        return version;
+    };
 
-			if (end == std::string::npos) break;
-			start = end + 1;
-		}
+    auto add = [&](fs::path exe, const std::string &branch, bool flatpak) {
+        std::error_code ec;
+        if (!fs::is_regular_file(exe, ec) || ec || fs::is_symlink(exe, ec))
+            return false;
 
-		return version;
-	};
+        if (!fs::is_regular_file(exe.parent_path() / "resources/app.asar", ec) || ec)
+            return false;
 
-	auto add = [&](
-		fs::path exe,
-		const std::string &branch,
-		bool flatpak)
-	{
-		std::error_code ec;
-		if (exe.empty() || !fs::exists(exe, ec)) return;
-		if (fs::is_symlink(exe, ec)) return;
+        if (!seen.insert(exe.lexically_normal().string()).second)
+            return false;
 
-		fs::path asarPath = exe.parent_path() / "resources" / "app.asar";
-		if (!fs::exists(asarPath, ec)) return;
+        result.push_back({.path = exe, .branch = branch, .isFlatpak = flatpak});
+        return true;
+    };
 
-		std::string key = exe.lexically_normal().string();
-		if (!seen.insert(key).second) return;
-
-		result.push_back({
-			.path = exe,
-			.branch = branch,
-			.isFlatpak = flatpak
-		});
-	};
-
-	const std::vector<
-		std::pair<fs::path,
-		std::tuple<const char *, const char *, bool>>
-	> checks = {
+    const std::vector<std::tuple<fs::path, const char *, const char *, bool>> checks = {
 		#ifdef _WIN32
-		{ home / "Discord", {"Discord", "Stable", false} },
-		{ home / "DiscordCanary", {"DiscordCanary", "Canary", false} },
-		{ home / "DiscordPTB", {"DiscordPTB", "PTB", false} }
+        {home / "Discord", "Discord", "Stable", false},
+        {home / "DiscordCanary", "DiscordCanary", "Canary", false},
+        {home / "DiscordPTB", "DiscordPTB", "PTB", false}
 		#else
-		{ home / ".config/discord", {"Discord", "Stable", false} },
-		{ home / ".config/discordcanary", {"DiscordCanary", "Canary", false} },
-		{ home / ".config/discordptb", {"DiscordPTB", "PTB", false} },
-		{ home / ".var/app/com.discordapp.Discord/config/discord", {"Discord", "Stable", true} },
-		{ home / ".var/app/com.discordapp.DiscordCanary/config/discord", {"DiscordCanary", "Canary", true} },
-		{ home / ".var/app/com.discordapp.DiscordPTB/config/discord", {"DiscordPTB", "PTB", true} }
+        {home / ".config/discord", "Discord", "Stable", false},
+        {home / ".config/discordcanary", "DiscordCanary", "Canary", false},
+        {home / ".config/discordptb", "DiscordPTB", "PTB", false},
+        {home / ".var/app/com.discordapp.Discord/config/discord", "Discord", "Stable", true},
+        {home / ".var/app/com.discordapp.DiscordCanary/config/discord", "DiscordCanary", "Canary", true},
+        {home / ".var/app/com.discordapp.DiscordPTB/config/discord", "DiscordPTB", "PTB", true}
 		#endif
-	};
+    };
 
-	for (const auto &[base, info] : checks) {
-		std::error_code ec;
-		if (!fs::exists(base, ec)) continue;
+    for (const auto &[base, exeName, branch, flatpak] : checks) {
+        std::error_code ec;
+        if (!fs::is_directory(base, ec) || ec) continue;
 
-		auto [exeName, branch, flatpak] = info;
+        std::vector<std::pair<std::vector<int>, fs::path>> versions;
 
-		if (fs::is_directory(base, ec)) {
-			for (auto &entry : fs::directory_iterator(base, ec)) {
-				const auto name = entry.path().filename().string();
-				const auto version = parseVersion(name);
+        for (const auto &entry : fs::directory_iterator(base, ec)) {
+            if (ec) break;
+            auto version = parseVersion(entry.path().filename().string());
+            if (!version.empty() && entry.is_directory(ec))
+                versions.emplace_back(std::move(version), entry.path());
+        }
 
-				if (version.empty())
-					continue;
+        std::sort(versions.begin(), versions.end(), [](const auto &a, const auto &b) {
+            return std::lexicographical_compare(
+                b.first.begin(), b.first.end(),
+                a.first.begin(), a.first.end());
+        });
 
-				fs::path exe = entry.path() / exeName;
+        bool found = false;
+        for (const auto &[version, dir] : versions) {
+            fs::path exe = dir / exeName;
+			#ifdef _WIN32
+            exe += ".exe";
+			#endif
+            if (add(exe, branch, flatpak)) {
+                found = true;
+                break;
+            }
+        }
 
-				#ifdef _WIN32
-				exe += ".exe";
-				#endif
+        if (!found) {
+            fs::path exe = base / exeName;
+			#ifdef _WIN32
+            exe += ".exe";
+			#endif
+            add(exe, branch, flatpak);
+        }
+    }
 
-				if (fs::exists(exe, ec)) {
-					add(exe, branch, flatpak);
-				}
-			}
-		}
-
-		fs::path exe = base / exeName;
-
-		#ifdef _WIN32
-		exe += ".exe";
-		#endif
-
-		if (fs::exists(exe, ec)) {
-			add(exe, branch, flatpak);
-		}
-	}
-
-	return result;
+    return result;
 }
 
 fs::path OurHookLibraryPath()
