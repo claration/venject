@@ -8,6 +8,8 @@ Item {
 	height: 55
 
 	required property var selectedItem
+	property bool showEditButton: false
+	signal editRequested()
 
 	Rectangle {
 		anchors.fill: parent
@@ -29,9 +31,10 @@ Item {
 
 		Button {
 			text: "Edit"
+			visible: root.showEditButton
 			enabled: root.selectedItem !== null
+			onClicked: root.editRequested()
 		}
-
 
 		Button {
 			text: "Kill"

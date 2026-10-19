@@ -31,6 +31,7 @@ qt_add_executable(${PROJECT_NAME}
 
 set(QML_FILES
         qml/Main.qml
+		qml/EditWindow.qml
         qml/LaunchHelper.qml
         qml/DiscordItem.qml
         qml/DiscordColumn.qml

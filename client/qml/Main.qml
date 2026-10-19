@@ -51,6 +51,12 @@ ApplicationWindow {
 		}
 	]
 
+	EditWindow {
+		id: editWindow
+		visible: false
+		selectedItem: root.selectedItem
+	}
+
 	Settings {
 		property alias x: root.x
 		property alias y: root.y
@@ -163,8 +169,13 @@ ApplicationWindow {
 		Footer {
 			id: bottomBarRoot
 			Layout.fillWidth: true
-
 			selectedItem: root.selectedItem
+
+			showEditButton: true
+			onEditRequested: {
+				editWindow.selectedItem = root.selectedItem
+				editWindow.show()
+			}
 		}
 	}
 }
