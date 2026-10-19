@@ -54,10 +54,18 @@ int main(int argc, char **argv)
 	QStringList launchArg = parser.values(launchArgOpt);
 	QStringList overrideEntry = parser.values(overrideEntryOpt);
 
+	QStringList launch_mod_argv;
+
+	for (int i = 0; i < argc; ++i)
+		launch_mod_argv.append(QString::fromLocal8Bit(argv[i]));
+
 	if (!launch.isEmpty())
 	{
-		launcher.launch(launch, launchArg, overrideEntry);
+		launcher.launch(launch, launchArg, launch_mod_argv);
 		app.exit();
+		#ifndef Q_OS_WIN
+		exit(0);
+		#endif
 	}
 
 	app.setOrganizationName("claration");
