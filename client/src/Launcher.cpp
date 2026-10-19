@@ -1,4 +1,4 @@
-#include "launch.hpp"
+#include "Launcher.hpp"
 
 #include <QDir>
 #include <QJsonArray>
@@ -20,7 +20,7 @@ Launcher::Launcher(QObject *parent) : QObject(parent)
 {
 }
 
-void Launcher::launch_self(
+void Launcher::launchSelf(
 	const QString	  &path,
 	const QStringList &discord_args,
 	const QString	  &entry_point_path)

@@ -23,18 +23,27 @@ qt_standard_project_setup()
 
 qt_add_executable(${PROJECT_NAME}
 	src/main.cpp
-	src/launch.cpp
+	src/Launcher.cpp
 	src/network.cpp
 	src/paths/paths.cpp
 	../shared/shared.cpp
 )
 
+set_source_files_properties(qml/LaunchHelper.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 qt_add_qml_module(${PROJECT_NAME}
 	URI ${PROJECT_NAME}
 	VERSION 1.0
 
-	QML_FILES 
+	QML_FILES
 		qml/Main.qml
+        qml/LaunchHelper.qml
+        qml/DiscordItem.qml
+        qml/DiscordColumn.qml
+        qml/Footer.qml
+
+    SOURCES
+        src/Launcher.hpp
 
 	RESOURCES
 		resources/canary.svg

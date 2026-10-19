@@ -18,7 +18,7 @@
 #include <QSettings>
 #include <QCommandLineParser>
 
-#include "launch.hpp"
+#include "Launcher.hpp"
 
 int main(int argc, char **argv)
 {
@@ -33,7 +33,6 @@ int main(int argc, char **argv)
 	}
 
 	QGuiApplication	app(argc, argv);
-	Launcher launcher;
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("Vencord Launcher");
@@ -62,7 +61,8 @@ int main(int argc, char **argv)
 
 	if (!launch.isEmpty())
 	{
-		launcher.launch(launch, launchArg, launch_mod_argv);
+		Launcher launcher;
+		launcher.launch(launch, launchArg, overrideEntry);
 		exit(0); // app.exit() is so broken
 	}
 
@@ -81,7 +81,6 @@ int main(int argc, char **argv)
 #endif
 
 	QQmlApplicationEngine engine;
-	engine.rootContext()->setContextProperty("launcher", &launcher);
 
 	QObject::connect(
 		&engine,
