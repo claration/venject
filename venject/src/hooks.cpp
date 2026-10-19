@@ -325,7 +325,4 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fwdReason, LPVOID)
     return TRUE;
 }
 
-// TODO: use detours instead of dobby for windows
-// use this as a reference https://github.com/MeguminSama/Electron-Hook/blob/main/src/windows/hooks.rs
-
 #endif
