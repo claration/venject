@@ -50,9 +50,6 @@ endif()
 # MARK: TARGET
 # =========================
 
-# message(STATUS "Using XXD on this shit.")
-# include(cmake/Xxd.cmake)
-
 file(GLOB_RECURSE VENCORD_HOOK_SOURCES CONFIGURE_DEPENDS
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/../shared/*.cpp"

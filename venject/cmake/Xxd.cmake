@@ -1,9 +1,0 @@
-find_program(BASH_EXECUTABLE bash REQUIRED)
-find_program(_XXD xxd REQUIRED)
-
-# TODO: need powershell for msvc, or just keep using mingw..
-execute_process(
-	COMMAND "${BASH_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Xxd.sh"
-	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-	COMMAND_ERROR_IS_FATAL ANY
-)
