@@ -1,7 +1,7 @@
 import QtQuick
+import QtCore
 import QtQuick.Controls
 import QtQuick.Layouts
-import Qt.labs.settings
 import QtQuick.Dialogs
 
 ApplicationWindow {
