@@ -54,7 +54,7 @@ std::vector<DiscordInstall> FindDiscords()
 	auto add = [&](
 		fs::path exe,
 		const std::string &branch,
-		bool flatpak) 
+		bool flatpak)
 	{
 		std::error_code ec;
 		if (exe.empty() || !fs::exists(exe, ec)) return;

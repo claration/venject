@@ -24,7 +24,8 @@ std::string write_payload_to_tmp()
 
         file.write(
             reinterpret_cast<const char *>(g_payload_asar.data),
-            static_cast<std::streamsize>(g_payload_asar.data_len));
+            static_cast<std::streamsize>(g_payload_asar.data_len)
+		);
         if (!file) return {};
     }
 

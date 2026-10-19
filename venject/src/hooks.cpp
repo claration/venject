@@ -59,7 +59,7 @@ int __xstat64(int version, const char *path, struct stat64 *out)
 extern "C" 
 int open64(const char *path, int flags, ...)
 {
-	if (!original_open64)
+	if (!original_open64) 
 		original_open64 = resolve<open64_t>("open64");
 
 	auto redirected = utils::redirect(path);
@@ -76,8 +76,7 @@ int open64(const char *path, int flags, ...)
 
 	const auto mode = va_arg(args, int);
 
-	const auto result =
-		original_open64(target, flags, mode);
+	const auto result = original_open64(target, flags, mode);
 
 	va_end(args);
 
@@ -118,17 +117,15 @@ int openat64(int dirfd, const char *path, int flags, ...)
 __attribute__((constructor)) 
 void init()
 {
-	void *target = dlsym(
-		RTLD_DEFAULT,
-		"uv_fs_lstat");
-
-	if (!target)
-		return;
+	// uv_fs_lstat needs special treatment, vencord uses it
+	void *target = dlsym(RTLD_DEFAULT, "uv_fs_lstat");
+	if (!target) return;
 
 	DobbyHook(
 		target,
 		reinterpret_cast<void *>(&uv_fs_lstat),
-		reinterpret_cast<void **>(&original_uv_fs_lstat));
+		reinterpret_cast<void **>(&original_uv_fs_lstat)
+	);
 }
 
 } // namespace
@@ -168,24 +165,24 @@ MessageBoxA(               \
                            MB_OK                  \
     )
 
-#define ATTACH(orig, target)                                      \
-{                                                          \
+#define ATTACH(orig, target)                                      	\
+{                                                          			\
 		LONG result = DetourAttach(&(PVOID&)orig, (PVOID)(target)); \
-        if (result != 0) {                                        \
-            ERROR_HOOKING_MSG("Failed to hook " #orig             \
-                              ". Please report this issue.");     \
-            DetourTransactionAbort();                             \
-            return FALSE;                                             \
-    }                                                         \
+        if (result != 0) {                                        	\
+            ERROR_HOOKING_MSG("Failed to hook " #orig             	\
+                              ". Please report this issue.");     	\
+            DetourTransactionAbort();                             	\
+            return FALSE;                                           \
+    }                                                         		\
 }
 
 std::string lpcwstr_to_string(LPCWSTR lpcwszStr)
 {
-	if (!lpcwszStr)
-		return {};
+	if (!lpcwszStr) return {};
+
 	int strLength = WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, nullptr, 0, nullptr, nullptr);
-	if (strLength <= 0)
-		return {};
+	if (strLength <= 0) return {};
+
 	std::string str(static_cast<size_t>(strLength), 0);
 	WideCharToMultiByte(CP_UTF8, 0, lpcwszStr, -1, str.data(), strLength, nullptr, nullptr);
 	str.resize(static_cast<size_t>(strLength) - 1);
@@ -194,11 +191,11 @@ std::string lpcwstr_to_string(LPCWSTR lpcwszStr)
 
 std::wstring utf8_to_wstring(const std::string &utf8)
 {
-	if (utf8.empty())
-		return {};
+	if (utf8.empty()) return {};
+
 	int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
-	if (wlen <= 0)
-		return {};
+	if (wlen <= 0) return {};
+
 	std::wstring wstr(static_cast<size_t>(wlen), 0);
 	MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wstr.data(), wlen);
 	wstr.resize(static_cast<size_t>(wlen) - 1);
@@ -208,8 +205,8 @@ std::wstring utf8_to_wstring(const std::string &utf8)
 fs::path get_dll_path()
 {
 	const char *env = std::getenv("HOOK_DLL_PATH");
-	if (!env || env[0] == 0)
-		return {};
+	if (!env || env[0] == 0) return {};
+
 	return fs::path(env);
 }
 
@@ -293,7 +290,9 @@ extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_
 	}
 
 	std::wstring command_line{lp_command_line};
-	// Inject into the main process (no -- flags) and renderers, skip other --type= helpers.
+
+	// When the updater "restarts" Discord, it doesn't seem to pass any arguments to the process.
+    // So we can just check if the command contains "--" to make sure we hook the new Discord instance.
 	if (command_line.find(L"--") != std::wstring::npos && command_line.find(L"--type=renderer") == std::wstring::npos)
 	{
 		return original_create_process_w(lp_application_name, lp_command_line, lp_process_attributes, lp_thread_attributes, b_inherit_handles, dw_creation_flags, lp_environment, lp_current_directory, lp_startup_info, lp_process_information);
@@ -320,7 +319,7 @@ extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_
 		lp_process_information,
 		dll_path.c_str(),
 		original_create_process_w
-		);
+	);
 
 	if (!success)
 	{
@@ -328,32 +327,32 @@ extern "C" BOOL create_process_w(LPCWSTR lp_application_name, LPWSTR lp_command_
 		return success;
 	}
 
-	// DetourCreateProcessWithDllW leaves the process suspended, so resume it.
-	// If the caller passed CREATE_SUSPENDED the thread stays suspended as intended.
 	if (lp_process_information && lp_process_information->hThread)
 		ResumeThread(lp_process_information->hThread);
+
 	return success;
 }
 
+// TODO: use shared instead
 std::string get_executable_filename()
 {
 	std::string buf(260, 0);
 	for (;;)
 	{
 		DWORD len = GetModuleFileNameA(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
-		if (len == 0)
-			return {};
+		if (len == 0) return {};
+
 		if (len < buf.size())
 		{
 			buf.resize(len);
 			break;
 		}
-		if (buf.size() >= 32768)
-			return {};
+		if (buf.size() >= 32768) return {};
+
 		buf.resize(buf.size() * 2, 0);
 	}
-	if (buf.empty())
-		return {};
+	if (buf.empty()) return {};
+
 	return fs::path(buf).filename().string();
 }
 
@@ -371,15 +370,8 @@ extern "C" int uv_fs_lstat_hook(const void *loop, const void *req, const char *p
 
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
 {
-    if (DetourIsHelperProcess())
-    {
-        return TRUE;
-    }
-
-    if (fdwReason != DLL_PROCESS_ATTACH)
-    {
-        return TRUE;
-    }
+    if (DetourIsHelperProcess()) return TRUE;
+    if (fdwReason != DLL_PROCESS_ATTACH) return TRUE;
 
 	original_get_file_attributes_w_t = GetFileAttributesW;
 	original_create_file_w = CreateFileW;
@@ -388,8 +380,8 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
 
     DetourRestoreAfterWith();
 
-    if (DetourTransactionBegin() != NO_ERROR)
-        return FALSE;
+    if (DetourTransactionBegin() != NO_ERROR) return FALSE;
+
     if (DetourUpdateThread(GetCurrentThread()) != NO_ERROR)
     {
         DetourTransactionAbort();
@@ -405,17 +397,17 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
 	ATTACH(original_move_file_ex_w, move_file_ex_w)
 	ATTACH(original_create_process_w, create_process_w)
 
-	// Best-effort libuv hook (mirrors Rust reference):
+	// uv_fs_lstat needs special treatment, vencord uses it
 	// GetModuleHandleA(current_exe_filename) + GetProcAddress("uv_fs_lstat").
-	// Optional: if the symbol is missing we keep the main hooks and stay loaded.
     {
         std::string exe_name = get_executable_filename();
 
         HMODULE exe_mod = nullptr;
-        if (!exe_name.empty())
-            exe_mod = GetModuleHandleA(exe_name.c_str());
-        if (!exe_mod)
-            exe_mod = GetModuleHandleA(nullptr);
+        if (!exe_name.empty()) 
+			exe_mod = GetModuleHandleA(exe_name.c_str());
+        if (!exe_mod) 
+			exe_mod = GetModuleHandleA(nullptr);
+
         if (exe_mod)
         {
             FARPROC proc = GetProcAddress(exe_mod, "uv_fs_lstat");
@@ -427,9 +419,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
         }
     }
 
-	if (DetourTransactionCommit() != NO_ERROR)
-		return FALSE;
-
+	if (DetourTransactionCommit() != NO_ERROR) return FALSE;
     return TRUE;
 }
 

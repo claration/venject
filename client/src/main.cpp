@@ -22,7 +22,8 @@
 
 int main(int argc, char **argv)
 {
-	// force software renderer
+	// force software renderer because some people
+	// might not have a gpu
 	if (getenv("QT_QUICK_BACKEND") == nullptr) {
 		#ifdef Q_OS_WIN32
 		_putenv_s("QT_QUICK_BACKEND", "software");
