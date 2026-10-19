@@ -137,7 +137,6 @@ void init()
 
 #include <cstdlib>
 #include <string>
-#include <string_view>
 #include <filesystem>
 #include <iostream>
 
@@ -411,6 +410,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
 	// Optional: if the symbol is missing we keep the main hooks and stay loaded.
     {
         std::string exe_name = get_executable_filename();
+
         HMODULE exe_mod = nullptr;
         if (!exe_name.empty())
             exe_mod = GetModuleHandleA(exe_name.c_str());
@@ -422,22 +422,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
             if (proc)
             {
                 original_uv_fs_lstat = reinterpret_cast<uv_fs_lstat_t>(proc);
-                bool uv_committed = false;
-                if (DetourTransactionBegin() == NO_ERROR)
-                {
-                    if (DetourUpdateThread(GetCurrentThread()) == NO_ERROR)
-                    {
-                        LONG uv_res = DetourAttach(&(PVOID &)original_uv_fs_lstat, (PVOID)uv_fs_lstat_hook);
-                        if (uv_res == NO_ERROR)
-                            uv_committed = (DetourTransactionCommit() == NO_ERROR);
-                        else
-                            DetourTransactionAbort();
-                    }
-                    else
-                        DetourTransactionAbort();
-                }
-                if (!uv_committed)
-                    original_uv_fs_lstat = nullptr;
+				ATTACH(original_uv_fs_lstat, uv_fs_lstat_hook)
             }
         }
     }
