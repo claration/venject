@@ -34,6 +34,16 @@ int main(int argc, char **argv)
 
 	QGuiApplication	app(argc, argv);
 
+	app.setOrganizationName("claration");
+	app.setOrganizationDomain("clarati.on");
+	app.setApplicationName("VencordLauncher");
+	app.setApplicationDisplayName("Vencord Launcher");
+#ifdef Q_OS_WIN32
+	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
+#else // Q_OS_WIN32
+	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.png"));
+#endif // Q_OS_WIN32
+
 	QCommandLineParser parser;
 	parser.setApplicationDescription("Vencord Launcher");
 	parser.addHelpOption();
@@ -65,16 +75,6 @@ int main(int argc, char **argv)
 		launcher.launch(launch, launchArg, overrideEntry);
 		exit(0); // app.exit() is so broken
 	}
-
-	app.setOrganizationName("claration");
-	app.setOrganizationDomain("clarati.on");
-	app.setApplicationName("VencordLauncher");
-	app.setApplicationDisplayName("Vencord Launcher");
-	#ifdef Q_OS_WIN32
-	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
-	#else // Q_OS_WIN32
-	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.png"));
-	#endif // Q_OS_WIN32
 
 #ifdef Q_OS_WIN
 	QSettings::setDefaultFormat(QSettings::IniFormat);

@@ -22,7 +22,7 @@ Item {
 		spacing: 12
 
 		Label {
-			text: root.selectedItem ? root.selectedItem.branch : "No installation selected"
+			text: root.selectedItem ? root.selectedItem.branch : qsTr("No installation selected")
 			font.pixelSize: 12
 			color: sysPalette.text
 			Layout.fillWidth: true
@@ -30,19 +30,19 @@ Item {
 		}
 
 		Button {
-			text: "Edit"
+			text: qsTr("Edit")
 			visible: root.showEditButton
 			enabled: root.selectedItem !== null
 			onClicked: root.editRequested()
 		}
 
 		Button {
-			text: "Kill"
+			text: qsTr("Kill")
 			enabled: root.selectedItem !== null
 		}
 
 		Button {
-			text: "Launch"
+			text: qsTr("Launch")
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {

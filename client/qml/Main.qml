@@ -38,7 +38,7 @@ ApplicationWindow {
 
 	readonly property var sectionModel: [
 		{
-			name: "Config",
+			name: qsTr("Config"),
 			collapsed: root.standardCollapsed,
 			items: discordList.filter(item => !item.isFlatpak),
 			toggle: () => root.standardCollapsed = !root.standardCollapsed
@@ -74,21 +74,25 @@ ApplicationWindow {
 
 	MessageDialog {
 		id: updateDialog
-		title: "Vencord Update Available"
+		title: qsTr("Vencord Update Available")
 		buttons: MessageDialog.Yes | MessageDialog.No
 
 		property string launchPath: ""
 		property string updateInstalledHash: ""
 		property string updateLatestHash: ""
 
-		text: "A new version of Vencord is available.\n\n" + "Installed: "
-			+ updateInstalledHash + "\n" + "Latest: " + updateLatestHash + "\n\n"
-			+ "Would you like to update before launching?"
+		text: qsTr("A new version of Vencord is available.")
+			+ "\n\n" + qsTr("Installed: %1", updateInstalledHash)
+			+ "\n" + qsTr("Latest: %1", updateLatestHash)
+			+ "\n\n" + qsTr("Would you like o update before launching?")
+		// text: "A new version of Vencord is available.\n\n" + "Installed: "
+		// 	+ updateInstalledHash + "\n" + "Latest: " + updateLatestHash + "\n\n"
+		// 	+ "Would you like to update before launching?"
 
 		onAccepted: {
 			const result = Launcher.updateVencord()
 			if (!result.success) {
-				errorDialog.errorMessage = "Failed to update Vencord.\n\n" + result.error
+				errorDialog.errorMessage = qsTr("Failed to update Vencord.") + "\n\n" + result.error
 				errorDialog.open()
 				return
 			}
@@ -107,7 +111,7 @@ ApplicationWindow {
 			const result = Launcher.checkForUpdates()
 
 			if (!result.success) {
-				errorDialog.errorMessage = "Failed to check for Vencord updates.\n\n" + result.error
+				errorDialog.errorMessage = qsTr("Failed to check for Vencord updates.") + "\n\n" + result.error
 				errorDialog.open()
 				return
 			}
