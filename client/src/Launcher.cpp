@@ -171,6 +171,7 @@ QVariantList Launcher::findDiscords()
 
 		item["path"]			 = QString::fromStdString(discord.path.string());
 		item["branch"]			 = QString::fromStdString(discord.branch);
+		item["id"]			 	 = QString::fromStdString(discord.uniqueIdentifer);
 		item["isFlatpak"]		 = discord.isFlatpak;
 
 		discordList.append(item);

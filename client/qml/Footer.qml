@@ -22,7 +22,11 @@ Item {
 		spacing: 12
 
 		Label {
-			text: root.selectedItem ? root.selectedItem.branch : qsTr("No installation selected")
+			text: root.selectedItem
+				? (selectedItem.branch
+					+ (selectedItem.isFlatpak ? " (Flatpak)" : "")
+					+ "\n" + selectedItem.id)
+				: qsTr("No installation selected")
 			font.pixelSize: 12
 			color: sysPalette.text
 			Layout.fillWidth: true

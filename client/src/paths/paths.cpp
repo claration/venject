@@ -8,7 +8,6 @@
 #include <filesystem>
 #include <unordered_set>
 
-#include "../globals.h"
 #include "../../../shared/shared.hpp"
 
 namespace fs = std::filesystem;
@@ -45,7 +44,7 @@ std::vector<DiscordInstall> FindDiscords()
         return version;
     };
 
-    auto add = [&](fs::path exe, const std::string &branch, bool flatpak) {
+    auto add = [&](fs::path exe, const std::string &branch, bool flatpak, const std::string uniqueIdentifer) {
         std::error_code ec;
         if (!fs::is_regular_file(exe, ec) || ec || fs::is_symlink(exe, ec))
             return false;
@@ -56,7 +55,12 @@ std::vector<DiscordInstall> FindDiscords()
         if (!seen.insert(exe.lexically_normal().string()).second)
             return false;
 
-        result.push_back({.path = exe, .branch = branch, .isFlatpak = flatpak});
+        result.push_back({
+			.path = exe, 
+			.uniqueIdentifer = uniqueIdentifer, 
+			.branch = branch, 
+			.isFlatpak = flatpak
+		});
         return true;
     };
 
@@ -100,7 +104,7 @@ std::vector<DiscordInstall> FindDiscords()
 			#ifdef _WIN32
             exe += ".exe";
 			#endif
-            if (add(exe, branch, flatpak)) {
+            if (add(exe, branch, flatpak, base)) {
                 found = true;
                 break;
             }
@@ -111,7 +115,7 @@ std::vector<DiscordInstall> FindDiscords()
 			#ifdef _WIN32
             exe += ".exe";
 			#endif
-            add(exe, branch, flatpak);
+            add(exe, branch, flatpak, base);
         }
     }
 
