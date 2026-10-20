@@ -13,13 +13,17 @@ find_package(Qt6 CONFIG REQUIRED COMPONENTS
 	Qml
 	Quick
 	QuickControls2
+    LinguistTools
 )
 
 # =========================
 # MARK: TARGET
 # =========================
 
-qt_standard_project_setup()
+qt_standard_project_setup(
+        I18N_SOURCE_LANGUAGE en_US
+        I18N_TRANSLATED_LANGUAGES
+)
 
 qt_add_executable(${PROJECT_NAME}
 	src/main.cpp
@@ -62,6 +66,8 @@ qt_add_qml_module(${PROJECT_NAME}
 		resources/icon.ico
 		resources/icon.png
 )
+
+qt_add_translations(VencordLauncher TS_FILE_DIR i18n TS_OUTPUT_DIRECTORY i18n)
 
 include(cmake/Git.cmake)
 
