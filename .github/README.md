@@ -46,4 +46,6 @@ make build
 
 ## License
 
-Project is licensed under the MIT license. You can see the full details of the license [here](https://github.com/khcrysalis/PlumeImpactor/blob/main/LICENSE). Some components may be licensed under different licenses, see their respective directories for details.
+This project is licensed under the GPL-3.0 license. You can see the full details of the license [here](https://github.com/claration/venject/blob/main/LICENSE). 
+
+By contributing to this project, you agree to license your code under the GPL-3.0 license as well (including agreeing to license exceptions), ensuring that your work, like all other contributions, remains freely accessible and open.
