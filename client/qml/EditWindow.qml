@@ -1,4 +1,3 @@
-
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -14,6 +13,9 @@ Window {
     visible: true
 
     required property var selectedItem
+
+    property string currentLogPath: ""
+    property string lastLogContents: ""
 
     title: selectedItem.branch
            + (selectedItem.isFlatpak ? " (Flatpak)" : "")
@@ -36,13 +38,55 @@ Window {
     function selectItem() {
         SettingsHelper.currentItemId = String(selectedItem.id)
         loadSettings()
+        updateLogPath()
+    }
+
+	function updateLogPath() {
+		currentLogPath = selectedItem && selectedItem.path
+				? StandardPaths.writableLocation(StandardPaths.TempLocation)
+				+ "/" + selectedItem.path.split("/").pop().split("\\").pop().replace(/\.[^.]+$/, "")
+				+ ".log"
+				: ""
+
+		lastLogContents = ""
+		logField.clear()
+
+		console.log(currentLogPath)
+
+		if (enableLogging.checked)
+			pollLog()
+	}
+
+	function pollLog() {
+        if (!enableLogging.checked || !currentLogPath)
+            return
+
+        const path = currentLogPath
+        
+        // Ensure we are still looking at the active log path
+        if (path !== editWindow.currentLogPath)
+            return
+
+        // Read directly via C++ helper (bypasses caching and file:// restrictions)
+        const content = Launcher.readTextFile(path)
+        
+        if (content !== editWindow.lastLogContents) {
+            editWindow.lastLogContents = content
+            logField.text = content
+            logField.cursorPosition = logField.length
+        }
     }
 
     Component.onCompleted: selectItem()
 
     onSelectedItemChanged: {
-        if (selectedItem)
+        if (selectedItem) {
             selectItem()
+        } else {
+            currentLogPath = ""
+            lastLogContents = ""
+            logField.clear()
+        }
     }
 
     FileDialog {
@@ -57,6 +101,16 @@ Window {
             entryPointField.text = path
             SettingsHelper.settings.entryPoint = path
         }
+    }
+
+    Timer {
+        id: logPollTimer
+
+        interval: 1000
+        repeat: true
+        running: enableLogging.checked
+
+        onTriggered: editWindow.pollLog()
     }
 
     ColumnLayout {
@@ -90,13 +144,19 @@ Window {
                         font.pixelSize: 18
                     }
 
-                    TextArea {
-                        id: logField
+					ScrollView {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        readOnly: true
-                        selectByMouse: true
-                        wrapMode: TextEdit.Wrap
+
+                        TextArea {
+                            id: logField
+
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: enableLoggingWrap.checked
+                                    ? TextEdit.Wrap
+                                    : TextEdit.NoWrap
+                        }
                     }
 
                     RowLayout {
@@ -104,23 +164,44 @@ Window {
 
                         CheckBox {
                             id: enableLogging
+
                             text: "Keep updating"
-                            onToggled: SettingsHelper.settings.enableLogging = checked
+
+                            onToggled: {
+                                SettingsHelper.settings.enableLogging = checked
+
+                                if (checked)
+                                    editWindow.pollLog()
+                            }
                         }
 
                         CheckBox {
                             id: enableLoggingWrap
+
                             text: "Wrap Lines"
-                            onToggled: SettingsHelper.settings.enableLoggingWrap = checked
+
+                            onToggled: {
+                                SettingsHelper.settings.enableLoggingWrap = checked
+                            }
                         }
 
                         Button {
                             text: "Copy"
+
+                            onClicked: {
+                                logField.selectAll()
+                                logField.copy()
+                                logField.deselect()
+                            }
                         }
 
                         Button {
                             text: "Clear"
-                            onClicked: logField.clear()
+
+                            onClicked: {
+                                editWindow.lastLogContents = ""
+                                logField.clear()
+                            }
                         }
                     }
                 }
@@ -157,9 +238,13 @@ Window {
 
                         TextField {
                             id: entryPointField
+
                             Layout.fillWidth: true
                             placeholderText: "/home/user/.config/Vencord/dist/patcher.js"
-                            onTextEdited: SettingsHelper.settings.entryPoint = text
+
+                            onTextEdited: {
+                                SettingsHelper.settings.entryPoint = text
+                            }
                         }
 
                         Button {
@@ -182,9 +267,13 @@ Window {
 
                     TextField {
                         id: launchArgsField
+
                         Layout.fillWidth: true
                         placeholderText: "--start-minimized --enable-blink-features=MiddleClickAutoscroll"
-                        onTextEdited: SettingsHelper.settings.launchArgs = text
+
+                        onTextEdited: {
+                            SettingsHelper.settings.launchArgs = text
+                        }
                     }
 
                     Item {
@@ -208,8 +297,10 @@ Window {
 
                     TextArea {
                         id: notesField
+
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+
                         placeholderText: "Enter notes..."
                         wrapMode: TextEdit.Wrap
                         selectByMouse: true

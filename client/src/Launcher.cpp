@@ -50,129 +50,188 @@ void Launcher::launchSelf(
 }
 
 void Launcher::launch(
-	const QString	  &path,  // discord executable
-	const QString     &args,  // discord args (-a)
-	const QString     &entry, // discord entrypoint (-o)
-	const QStringList &argv)  // mod loader full argv
+    const QString     &path,  // discord executable
+    const QString     &args,  // discord args (-a)
+    const QString     &entry, // discord entrypoint (-o)
+    const QStringList &argv)  // mod loader full argv
 {
-	QJsonArray jsonArgs;
+    QJsonArray jsonArgs;
 
-	for (const auto &arg : argv)
-		jsonArgs.append(arg);
+    for (const auto &arg : argv)
+        jsonArgs.append(arg);
 
-	auto environment = QProcessEnvironment::systemEnvironment();
-	environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
-	environment.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
-	environment.insert(
-		"CLIENT_JS_PATH",
-		entry.isEmpty()
-			? QString::fromStdString(shared::ModEntrypointPath().string())
-			: entry
-	);
-	environment.insert("CLIENT_ARGV_JSON", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
+    auto environment = QProcessEnvironment::systemEnvironment();
+
+    environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
+    environment.insert(
+        "CLIENT_EXECUTABLE_PATH",
+        QString::fromStdString(shared::OurExecutablePath().string()));
+
+    environment.insert(
+        "CLIENT_JS_PATH",
+        entry.isEmpty()
+            ? QString::fromStdString(shared::ModEntrypointPath().string())
+            : entry);
+
+    environment.insert(
+        "CLIENT_ARGV_JSON",
+        QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
+
+	const QString executableName = QFileInfo(path).completeBaseName();
+
+	const QString logPath = QDir::temp().filePath(
+		QString("%1.log").arg(executableName));
+
+    qDebug() << "Discord stdout/stderr log:" << logPath;
 
 #ifdef Q_OS_WIN32
-	environment.insert("HOOK_DLL_PATH", QString::fromStdString(paths::OurHookLibraryPath().string()));
 
-	// Build a Windows Unicode environment block.
-	std::vector<wchar_t> environmentBlock;
+    environment.insert(
+        "HOOK_DLL_PATH",
+        QString::fromStdString(paths::OurHookLibraryPath().string()));
 
-	for (const auto &key : environment.keys())
-	{
-		const std::wstring entry =
-			(key + '=' + environment.value(key)).toStdWString();
+    std::vector<wchar_t> environmentBlock;
 
-		environmentBlock.insert(
-			environmentBlock.end(), entry.begin(), entry.end());
-		environmentBlock.push_back(L'\0');
-	}
+    for (const auto &key : environment.keys())
+    {
+        const std::wstring environmentEntry =
+            (key + '=' + environment.value(key)).toStdWString();
 
-	environmentBlock.push_back(L'\0');
+        environmentBlock.insert(
+            environmentBlock.end(),
+            environmentEntry.begin(),
+            environmentEntry.end());
 
-		   // Build a mutable Windows command line.
-	std::wstring commandLine =
-		L"\"" + path.toStdWString() + L"\"";
+        environmentBlock.push_back(L'\0');
+    }
 
-	for (const auto &arg : args)
-	{
-		commandLine += L" \"";
+    // Environment blocks must end with two null characters.
+    environmentBlock.push_back(L'\0');
 
-		const std::wstring wideArg = arg.toStdWString();
-		size_t backslashes = 0;
+    // Build the command line.
+    std::wstring commandLine = L"\"" + path.toStdWString() + L"\"";
 
-		for (wchar_t c : wideArg)
-		{
-			if (c == L'\\')
-			{
-				++backslashes;
-			}
-			else if (c == L'"')
-			{
-				commandLine.append(backslashes * 2 + 1, L'\\');
-				commandLine += L'"';
-				backslashes = 0;
-			}
-			else
-			{
-				commandLine.append(backslashes, L'\\');
-				backslashes = 0;
-				commandLine += c;
-			}
-		}
+    const QStringList arguments = args.split(' ', Qt::SkipEmptyParts);
 
-		commandLine.append(backslashes * 2, L'\\');
-		commandLine += L'"';
-	}
+    for (const auto &arg : arguments)
+    {
+        commandLine += L" \"";
 
-	std::vector<wchar_t> mutableCommandLine(
-		commandLine.begin(), commandLine.end());
-	mutableCommandLine.push_back(L'\0');
+        const std::wstring wideArg = arg.toStdWString();
+        size_t backslashes = 0;
 
-	const std::string dllPath =
-		paths::OurHookLibraryPath().string();
+        for (wchar_t c : wideArg)
+        {
+            if (c == L'\\')
+            {
+                ++backslashes;
+            }
+            else if (c == L'"')
+            {
+                commandLine.append(backslashes * 2 + 1, L'\\');
+                commandLine += L'"';
+                backslashes = 0;
+            }
+            else
+            {
+                commandLine.append(backslashes, L'\\');
+                backslashes = 0;
+                commandLine += c;
+            }
+        }
 
-	STARTUPINFOA startupInfo{};
-	startupInfo.cb = sizeof(startupInfo);
+        commandLine.append(backslashes * 2, L'\\');
+        commandLine += L'"';
+    }
 
-	PROCESS_INFORMATION processInfo{};
+    std::vector<wchar_t> mutableCommandLine(
+        commandLine.begin(), commandLine.end());
 
-	if (!DetourCreateProcessWithDllExA(
-			path.toLocal8Bit().constData(),
-			nullptr, // Replaced below with the mutable command line.
-			nullptr,
-			nullptr,
-			FALSE,
-			CREATE_UNICODE_ENVIRONMENT,
-			environmentBlock.data(),
-			nullptr,
-			&startupInfo,
-			&processInfo,
-			dllPath.c_str(),
-			nullptr))
-	{
-		qWarning() << "DetourCreateProcessWithDllExA failed:"
-				   << GetLastError();
-		return;
-	}
+    mutableCommandLine.push_back(L'\0');
 
-	CloseHandle(processInfo.hThread);
-	CloseHandle(processInfo.hProcess);
+    // Open the log file. The child process inherits this handle.
+    HANDLE logFile = CreateFileW(
+        reinterpret_cast<LPCWSTR>(logPath.utf16()),
+        FILE_APPEND_DATA,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        CREATE_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr);
+
+    if (logFile == INVALID_HANDLE_VALUE)
+    {
+        qWarning() << "Failed to open log file:"
+                   << logPath << GetLastError();
+        return;
+    }
+
+    STARTUPINFOW startupInfo{};
+    startupInfo.cb = sizeof(startupInfo);
+    startupInfo.dwFlags |= STARTF_USESTDHANDLES;
+    startupInfo.hStdOutput = logFile;
+    startupInfo.hStdError = logFile;
+    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+
+    PROCESS_INFORMATION processInfo{};
+
+    const std::wstring executablePath = path.toStdWString();
+    const std::string dllPath = paths::OurHookLibraryPath().string();
+
+    if (!DetourCreateProcessWithDllExW(
+            executablePath.c_str(),
+            mutableCommandLine.data(),
+            nullptr,
+            nullptr,
+            TRUE,
+            CREATE_UNICODE_ENVIRONMENT,
+            environmentBlock.data(),
+            nullptr,
+            &startupInfo,
+            &processInfo,
+            dllPath.c_str(),
+            nullptr))
+    {
+        qWarning() << "DetourCreateProcessWithDllExW failed:"
+                   << GetLastError();
+
+        CloseHandle(logFile);
+        return;
+    }
+
+    CloseHandle(logFile);
+
+    CloseHandle(processInfo.hThread);
+    CloseHandle(processInfo.hProcess);
+
 #else
-	QProcess process;
-	environment.insert("LD_PRELOAD", QString::fromStdString(paths::OurHookLibraryPath().string()));
 
-	process.setProcessEnvironment(environment);
-	process.setProgram(path);
+    environment.insert(
+        "LD_PRELOAD",
+        QString::fromStdString(paths::OurHookLibraryPath().string()));
 
-	const QStringList arguments = args.split(' ', Qt::SkipEmptyParts);
-	process.setArguments(arguments);
+    QProcess process;
 
-	qDebug() << "path:" << path;
-	qDebug() << "args:" << args;
-	qDebug() << "entry:" << entry;
-	qDebug() << "argv:" << argv;
+    process.setProcessEnvironment(environment);
+    process.setProgram(path);
 
-	process.startDetached();
+    const QStringList arguments = args.split(' ', Qt::SkipEmptyParts);
+    process.setArguments(arguments);
+
+    process.setStandardOutputFile(logPath, QIODevice::Truncate);
+    process.setStandardErrorFile(logPath, QIODevice::Append);
+
+    qDebug() << "path:" << path;
+    qDebug() << "args:" << args;
+    qDebug() << "entry:" << entry;
+    qDebug() << "argv:" << argv;
+    qDebug() << "log:" << logPath;
+
+    if (!process.startDetached())
+    {
+        qWarning() << "Failed to launch Discord:" << path;
+    }
+
 #endif
 }
 

@@ -44,11 +44,6 @@ Item {
 		}
 
 		Button {
-			text: qsTr("Kill")
-			enabled: false
-		}
-
-		Button {
 			text: qsTr("Launch")
 			enabled: root.selectedItem !== null
 			onClicked: {

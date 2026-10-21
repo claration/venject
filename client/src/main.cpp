@@ -22,15 +22,14 @@
 
 int main(int argc, char **argv)
 {
+	// needs this for capturing discords stdout/stderr
+	qputenv("QML_XHR_ALLOW_FILE_READ", "1");
+
 	// force software renderer because some people
 	// might not have a gpu
-	if (getenv("QT_QUICK_BACKEND") == nullptr) {
-		#ifdef Q_OS_WIN32
-		_putenv_s("QT_QUICK_BACKEND", "software");
-		#else  // Q_OS_WIN32
-		setenv("QT_QUICK_BACKEND", "software", 1);
-		#endif // Q_OS_WIN32
-	}
+	if (qgetenv("QT_QUICK_BACKEND").isEmpty()) {
+        qputenv("QT_QUICK_BACKEND", "software");
+    }
 
 	QGuiApplication	app(argc, argv);
 

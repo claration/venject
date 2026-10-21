@@ -7,6 +7,12 @@
 #include <QVariantMap>
 #include <qqmlintegration.h>
 
+
+
+// read text fiel
+#include <QFile>
+#include <QTextStream>
+
 class Launcher : public QObject
 {
 	Q_OBJECT
@@ -21,4 +27,18 @@ class Launcher : public QObject
 	Q_INVOKABLE QVariantList findDiscords();
 	Q_INVOKABLE QVariantMap	 checkForUpdates();
 	Q_INVOKABLE QVariantMap	 updateVencord();
+
+    Q_INVOKABLE QString readTextFile(const QString &path) {
+        QString cleanPath = path;
+        if (cleanPath.startsWith("file://")) {
+            cleanPath.remove(0, 7);
+        }
+        
+        QFile file(cleanPath);
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream in(&file);
+            return in.readAll();
+        }
+        return QString();
+    }
 };
