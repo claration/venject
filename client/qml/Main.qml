@@ -76,6 +76,8 @@ ApplicationWindow {
 		buttons: MessageDialog.Yes | MessageDialog.No
 
 		property string launchPath: ""
+		property string launchArgs: ""
+		property string entryPointPath: ""
 		property string updateInstalledHash: ""
 		property string updateLatestHash: ""
 
@@ -91,35 +93,56 @@ ApplicationWindow {
 				errorDialog.open()
 				return
 			}
-			Launcher.launchSelf(launchPath)
+			Launcher.launchSelf(launchPath, launchArgs, entryPointPath)
 		}
 
 		onRejected: {
-			Launcher.launchSelf(launchPath)
+			Launcher.launchSelf(launchPath, launchArgs, entryPointPath)
 		}
 	}
 
 	Connections {
 		target: LaunchHelper
 
-		function onHandleLaunchMessage(path: string) {
+		function onHandleLaunchMessage(
+			path,
+			launchArgs,
+			entryPointPath
+		) {
+			console.log("handleLaunchMessage")
+			console.log(path)
+			console.log(launchArgs)
+			console.log(entryPointPath)
+
 			const result = Launcher.checkForUpdates()
 
 			if (!result.success) {
-				errorDialog.errorMessage = qsTr("Failed to check for Vencord updates.") + "\n\n" + result.error
+				errorDialog.errorMessage =
+					qsTr("Failed to check for Vencord updates.")
+					+ "\n\n" + result.error
 				errorDialog.open()
 				return
 			}
 
 			if (result.upToDate) {
-				Launcher.launchSelf(path)
+				Launcher.launchSelf(path, launchArgs, entryPointPath)
 				return
 			}
 
 			updateDialog.launchPath = path
+			updateDialog.launchArgs = launchArgs
+			updateDialog.entryPointPath = entryPointPath
 			updateDialog.updateInstalledHash = result.installedHash
 			updateDialog.updateLatestHash = result.latestHash
 			updateDialog.open()
+		}
+	}
+
+	Connections {
+		target: SettingsHelper
+
+		function onSettingsReloaded() {
+			editWindow.loadSettings()
 		}
 	}
 
@@ -134,7 +157,11 @@ ApplicationWindow {
 
 			showEditButton: true
 			onEditRequested: {
-				editWindow.selectedItem = root.selectedItem
+				if (!root.selectedItem)
+					return
+
+				SettingsHelper.currentItemId = String(root.selectedItem.id)
+				editWindow.loadSettings()
 				editWindow.show()
 			}
 		}

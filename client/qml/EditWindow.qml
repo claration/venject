@@ -1,8 +1,10 @@
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtCore
+import VencordLauncher
 
 Window {
     id: editWindow
@@ -16,8 +18,6 @@ Window {
     title: selectedItem.branch
            + (selectedItem.isFlatpak ? " (Flatpak)" : "")
 
-	// TODO: discord icon in window titlebar
-
     SystemPalette {
         id: sysPalette
         colorGroup: SystemPalette.Active
@@ -25,78 +25,51 @@ Window {
 
     color: sysPalette.window
 
-	property string currentItemId: String(selectedItem.id)
+    function loadSettings() {
+        entryPointField.text = SettingsHelper.settings.entryPoint
+        launchArgsField.text = SettingsHelper.settings.launchArgs
+        notesField.text = SettingsHelper.settings.notes
+        enableLogging.checked = SettingsHelper.settings.enableLogging
+        enableLoggingWrap.checked = SettingsHelper.settings.enableLoggingWrap
+    }
 
-	Component {
-		id: settingsComponent
+    function selectItem() {
+        SettingsHelper.currentItemId = String(selectedItem.id)
+        loadSettings()
+    }
 
-		Settings {
-			property string entryPoint: ""
-			property string launchArgs: ""
-			property string notes: ""
-			property bool enableLogging: true
-			property bool enableLoggingWrap: true
+    Component.onCompleted: selectItem()
 
-			category: "discords/" + editWindow.currentItemId
-		}
-	}
+    onSelectedItemChanged: {
+        if (selectedItem)
+            selectItem()
+    }
 
-	Loader {
-		id: settingsLoader
-		sourceComponent: settingsComponent
-		active: true
+    FileDialog {
+        id: entryPointFileDialog
 
-		onLoaded: {
-			entryPointField.text = item.entryPoint
-			launchArgsField.text = item.launchArgs
-			notesField.text = item.notes
-			enableLogging.checked = item.enableLogging
-			enableLoggingWrap.checked = item.enableLoggingWrap
-		}
-	}
+        title: "Choose a Vencord entrypoint (patcher.js)"
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["Patcher files (*.js)", "All files (*)"]
 
-	onSelectedItemChanged: {
-		currentItemId = String(selectedItem.id)
-
-		settingsLoader.active = false
-		settingsLoader.active = true
-	}
-
-	FileDialog {
-		id: entryPointFileDialog
-		title: "Choose a Vencord entrypoint (patcher.js)"
-		fileMode: FileDialog.OpenFile
-		nameFilters: ["Patcher files (*.js)"]
-
-		onAccepted: {
-			entryPointField.text = selectedFile.toString().replace("file://", "")
-
-			if (settingsLoader.item)
-				settingsLoader.item.entryPoint = entryPointField.text
-		}
-	}
+        onAccepted: {
+            const path = selectedFile.toString().replace("file://", "")
+            entryPointField.text = path
+            SettingsHelper.settings.entryPoint = path
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-
         TabBar {
             id: tabBar
-
             Layout.fillWidth: true
 
-            TabButton {
-                text: "Discord Log"
-            }
-
-            TabButton {
-                text: "Settings"
-            }
-
-            TabButton {
-                text: "Notes"
-            }
+            TabButton { text: "Discord Log" }
+            TabButton { text: "Settings" }
+            TabButton { text: "Notes" }
         }
 
         StackLayout {
@@ -119,47 +92,37 @@ Window {
 
                     TextArea {
                         id: logField
-
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-
                         readOnly: true
                         selectByMouse: true
                         wrapMode: TextEdit.Wrap
                     }
 
-					RowLayout {
-						spacing: 12
+                    RowLayout {
+                        spacing: 12
 
-						CheckBox {
-							id: enableLogging
-							text: "Keep updating"
-							checked: true
-							onToggled: {
-								if (settingsLoader.item)
-									settingsLoader.item.enableLogging = checked
-							}
-						}
+                        CheckBox {
+                            id: enableLogging
+                            text: "Keep updating"
+                            onToggled: SettingsHelper.settings.enableLogging = checked
+                        }
 
-						CheckBox {
-							id: enableLoggingWrap
-							text: "Wrap Lines"
-							checked: true
-							onToggled: {
-								if (settingsLoader.item)
-									settingsLoader.item.enableLoggingWrap = checked
-							}
-						}
+                        CheckBox {
+                            id: enableLoggingWrap
+                            text: "Wrap Lines"
+                            onToggled: SettingsHelper.settings.enableLoggingWrap = checked
+                        }
 
-						Button {
-							text: "Copy"
-						}
+                        Button {
+                            text: "Copy"
+                        }
 
-						Button {
-							text: "Clear"
-							onClicked: logField.clear()
-						}
-					}
+                        Button {
+                            text: "Clear"
+                            onClicked: logField.clear()
+                        }
+                    }
                 }
             }
 
@@ -176,54 +139,52 @@ Window {
                         font.pixelSize: 18
                     }
 
-					Label {
+                    Label {
                         text: "Vencord Installation"
-						font.bold: true
+                        font.bold: true
                         font.pixelSize: 15
                     }
 
-					Label {
+                    Label {
                         text: "Custom Vencord entry point path, keep blank for default.\n\nNote: choosing a custom location will disable the update alert."
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
                     }
 
-					RowLayout {
-						TextField {
-							id: entryPointField
-							Layout.fillWidth: true
-							placeholderText: "/home/claration/.config/Vencord/dist/patcher.js"
-							onTextEdited: {
-								if (settingsLoader.item)
-									settingsLoader.item.entryPoint = text
-							}
-						}
-					
-						Button {
-							text: "Browse"
-							onClicked: {
-								if (settingsLoader.item)
-									entryPointFileDialog.open()
-							}
-						}
-					}
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+
+                        TextField {
+                            id: entryPointField
+                            Layout.fillWidth: true
+                            placeholderText: "/home/user/.config/Vencord/dist/patcher.js"
+                            onTextEdited: SettingsHelper.settings.entryPoint = text
+                        }
+
+                        Button {
+                            text: "Browse"
+                            onClicked: entryPointFileDialog.open()
+                        }
+                    }
 
                     Label {
                         text: "Launch arguments"
-						font.bold: true
+                        font.bold: true
                         font.pixelSize: 15
                     }
 
-					Label {
+                    Label {
                         text: "Advanced users may choose to customize Discords & Electrons startup options."
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
                     }
 
                     TextField {
                         id: launchArgsField
                         Layout.fillWidth: true
                         placeholderText: "--start-minimized --enable-blink-features=MiddleClickAutoscroll"
-						onTextEdited: {
-							if (settingsLoader.item)
-								settingsLoader.item.launchArgs = text
-						}
+                        onTextEdited: SettingsHelper.settings.launchArgs = text
                     }
 
                     Item {
@@ -247,23 +208,22 @@ Window {
 
                     TextArea {
                         id: notesField
-
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-
                         placeholderText: "Enter notes..."
                         wrapMode: TextEdit.Wrap
                         selectByMouse: true
-						onTextChanged: {
-							if (activeFocus && settingsLoader.item)
-								settingsLoader.item.notes = text
-						}
+
+                        onTextChanged: {
+                            if (activeFocus)
+                                SettingsHelper.settings.notes = text
+                        }
                     }
                 }
             }
         }
 
-		Rectangle {
+        Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
             color: sysPalette.light
@@ -272,7 +232,6 @@ Window {
         Footer {
             Layout.fillWidth: true
             Layout.preferredHeight: 55
-
             selectedItem: editWindow.selectedItem
             showEditButton: false
         }

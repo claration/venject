@@ -37,6 +37,7 @@ set(QML_FILES
         qml/Main.qml
 		qml/EditWindow.qml
         qml/LaunchHelper.qml
+		qml/SettingsHelper.qml
         qml/DiscordItem.qml
         qml/DiscordColumn.qml
         qml/Footer.qml)
@@ -49,6 +50,7 @@ foreach (QML_FILE IN LISTS QML_FILES)
 endforeach ()
 
 set_source_files_properties(qml/LaunchHelper.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/SettingsHelper.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(${PROJECT_NAME}
 	URI ${PROJECT_NAME}

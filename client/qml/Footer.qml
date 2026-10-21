@@ -53,7 +53,11 @@ Item {
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
-					LaunchHelper.handleLaunch(root.selectedItem.path)
+					LaunchHelper.handleLaunch(
+						root.selectedItem.path,
+						SettingsHelper.settings.launchArgs,
+						SettingsHelper.settings.entryPoint
+					)
 				}
 			}
 		}

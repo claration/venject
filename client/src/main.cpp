@@ -61,8 +61,8 @@ int main(int argc, char **argv)
 	parser.process(app);
 
 	QString launch = parser.value(launchOpt);
-	QStringList launchArg = parser.values(launchArgOpt);
-	QStringList overrideEntry = parser.values(overrideEntryOpt);
+	QString launchArg = parser.value(launchArgOpt);
+	QString overrideEntry = parser.value(overrideEntryOpt);
 
 	QStringList launch_mod_argv;
 
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	if (!launch.isEmpty())
 	{
 		Launcher launcher;
-		launcher.launch(launch, launchArg, overrideEntry);
+		launcher.launch(launch, launchArg, overrideEntry, launch_mod_argv);
 		exit(0); // app.exit() is so broken
 	}
 

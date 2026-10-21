@@ -6,14 +6,15 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QStringList>
+#include <QDebug>
 
 #include "network.hpp"
 #include "paths/paths.hpp"
 #include "../../shared/shared.hpp"
 
 #ifdef Q_OS_WIN32
-#include <windows.h>
-#include <detours.h>
+# include <windows.h>
+# include <detours.h>
 #endif
 
 Launcher::Launcher(QObject *parent) : QObject(parent)
@@ -22,7 +23,7 @@ Launcher::Launcher(QObject *parent) : QObject(parent)
 
 void Launcher::launchSelf(
 	const QString	  &path,
-	const QStringList &discord_args,
+	const QString     &discord_args,
 	const QString	  &entry_point_path)
 {
 	QProcess process;
@@ -31,7 +32,9 @@ void Launcher::launchSelf(
 	args.append("-l");
 	args.append(path);
 
-	for (const QString &discord_arg : discord_args) {
+	const QStringList arguments = discord_args.split(' ', Qt::SkipEmptyParts);
+
+	for (const QString &discord_arg : arguments) {
 		args.append("-a");
 		args.append(discord_arg);
 	}
@@ -47,22 +50,25 @@ void Launcher::launchSelf(
 }
 
 void Launcher::launch(
-	const QString	  &path, // discord executable
-	const QStringList &args, // discord args (-o)
-	const QStringList &argv) // mod loader full argv
+	const QString	  &path,  // discord executable
+	const QString     &args,  // discord args (-a)
+	const QString     &entry, // discord entrypoint (-o)
+	const QStringList &argv)  // mod loader full argv
 {
 	QJsonArray jsonArgs;
 
 	for (const auto &arg : argv)
 		jsonArgs.append(arg);
 
-	// TODO: use detours instead of qprocesses for launching processes
-	// injected with arbritrary .dll files
-
 	auto environment = QProcessEnvironment::systemEnvironment();
 	environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
 	environment.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
-	environment.insert("CLIENT_JS_PATH", QString::fromStdString(shared::ModEntrypointPath().string()));
+	environment.insert(
+		"CLIENT_JS_PATH",
+		entry.isEmpty()
+			? QString::fromStdString(shared::ModEntrypointPath().string())
+			: entry
+	);
 	environment.insert("CLIENT_ARGV_JSON", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
 
 #ifdef Q_OS_WIN32
@@ -157,7 +163,15 @@ void Launcher::launch(
 
 	process.setProcessEnvironment(environment);
 	process.setProgram(path);
-	process.setArguments(args);
+
+	const QStringList arguments = args.split(' ', Qt::SkipEmptyParts);
+	process.setArguments(arguments);
+
+	qDebug() << "path:" << path;
+	qDebug() << "args:" << args;
+	qDebug() << "entry:" << entry;
+	qDebug() << "argv:" << argv;
+
 	process.startDetached();
 #endif
 }
