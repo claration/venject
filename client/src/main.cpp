@@ -36,7 +36,8 @@ int main(int argc, char **argv)
 	app.setOrganizationName("claration");
 	app.setOrganizationDomain("clarati.on");
 	app.setApplicationName("VencordLauncher");
-	app.setApplicationDisplayName("Vencord Launcher");
+	app.setApplicationDisplayName("Vencord Launcher 1.0.0");
+	app.setApplicationVersion("1.0.0");
 #ifdef Q_OS_WIN32
 	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
 #else // Q_OS_WIN32
