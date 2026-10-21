@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import QtCore
 
 Window {
@@ -30,6 +31,7 @@ Window {
 		id: settingsComponent
 
 		Settings {
+			property string entryPoint: ""
 			property string launchArgs: ""
 			property string notes: ""
 			property bool enableLogging: true
@@ -45,6 +47,7 @@ Window {
 		active: true
 
 		onLoaded: {
+			entryPointField.text = item.entryPoint
 			launchArgsField.text = item.launchArgs
 			notesField.text = item.notes
 			enableLogging.checked = item.enableLogging
@@ -57,6 +60,20 @@ Window {
 
 		settingsLoader.active = false
 		settingsLoader.active = true
+	}
+
+	FileDialog {
+		id: entryPointFileDialog
+		title: "Choose a Vencord entrypoint (patcher.js)"
+		fileMode: FileDialog.OpenFile
+		nameFilters: ["Patcher files (*.js)"]
+
+		onAccepted: {
+			entryPointField.text = selectedFile.toString().replace("file://", "")
+
+			if (settingsLoader.item)
+				settingsLoader.item.entryPoint = entryPointField.text
+		}
 	}
 
     ColumnLayout {
@@ -159,8 +176,44 @@ Window {
                         font.pixelSize: 18
                     }
 
+					Label {
+                        text: "Vencord Installation"
+						font.bold: true
+                        font.pixelSize: 15
+                    }
+
+					Label {
+                        text: "Custom Vencord entry point path, keep blank for default.\n\nNote: choosing a custom location will disable the update alert."
+                    }
+
+					RowLayout {
+						TextField {
+							id: entryPointField
+							Layout.fillWidth: true
+							placeholderText: "/home/claration/.config/Vencord/dist/patcher.js"
+							onTextEdited: {
+								if (settingsLoader.item)
+									settingsLoader.item.entryPoint = text
+							}
+						}
+					
+						Button {
+							text: "Browse"
+							onClicked: {
+								if (settingsLoader.item)
+									entryPointFileDialog.open()
+							}
+						}
+					}
+
                     Label {
                         text: "Launch arguments"
+						font.bold: true
+                        font.pixelSize: 15
+                    }
+
+					Label {
+                        text: "Advanced users may choose to customize Discords & Electrons startup options."
                     }
 
                     TextField {
