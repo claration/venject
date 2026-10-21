@@ -19,6 +19,7 @@ Item {
 		Button {
 			text: qsTr("Add Instance")
 			visible: root.showEditButton
+			enabled: false
 		}
 
 		Item {

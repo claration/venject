@@ -83,9 +83,6 @@ ApplicationWindow {
 			+ "\n\n" + qsTr("Installed: %1", updateInstalledHash)
 			+ "\n" + qsTr("Latest: %1", updateLatestHash)
 			+ "\n\n" + qsTr("Would you like o update before launching?")
-		// text: "A new version of Vencord is available.\n\n" + "Installed: "
-		// 	+ updateInstalledHash + "\n" + "Latest: " + updateLatestHash + "\n\n"
-		// 	+ "Would you like to update before launching?"
 
 		onAccepted: {
 			const result = Launcher.updateVencord()
