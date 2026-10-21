@@ -160,8 +160,17 @@ Window {
                     }
 
                     RowLayout {
-                        spacing: 12
 
+                        Button {
+                            text: "Copy"
+
+                            onClicked: {
+                                logField.selectAll()
+                                logField.copy()
+                                logField.deselect()
+                            }
+                        }
+						
                         CheckBox {
                             id: enableLogging
 
@@ -182,16 +191,6 @@ Window {
 
                             onToggled: {
                                 SettingsHelper.settings.enableLoggingWrap = checked
-                            }
-                        }
-
-                        Button {
-                            text: "Copy"
-
-                            onClicked: {
-                                logField.selectAll()
-                                logField.copy()
-                                logField.deselect()
                             }
                         }
                     }

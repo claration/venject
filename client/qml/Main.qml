@@ -197,33 +197,5 @@ ApplicationWindow {
 				}
 			}
 		}
-
-		Rectangle {
-			Layout.fillWidth: true
-			height: 1
-			color: sysPalette.light
-		}
-
-		Control {
-			padding: 4
-
-			contentItem: RowLayout {
-				spacing: 12
-
-				Label {
-					text: root.selectedItem
-						? (selectedItem.branch
-							+ (selectedItem.isFlatpak ? " (Flatpak)" : "")
-							+ " — " + selectedItem.id)
-						: qsTr("No installation selected")
-
-					font.pixelSize: 12
-					color: sysPalette.text
-					Layout.fillWidth: true
-					elide: Text.ElideRight
-				}
-			}
-		}
-
 	}
 }
