@@ -17,8 +17,7 @@ Window {
     property string currentLogPath: ""
     property string lastLogContents: ""
 
-    title: selectedItem.branch
-           + (selectedItem.isFlatpak ? " (Flatpak)" : "")
+    title: selectedItem.branch + (selectedItem.isFlatpak ? " (Flatpak)" : "")
 
     SystemPalette {
         id: sysPalette
@@ -42,32 +41,21 @@ Window {
     }
 
 	function updateLogPath() {
-		currentLogPath = selectedItem && selectedItem.path
-				? StandardPaths.writableLocation(StandardPaths.TempLocation)
-				+ "/" + selectedItem.path.split("/").pop().split("\\").pop().replace(/\.[^.]+$/, "")
-				+ ".log"
-				: ""
+        currentLogPath = selectedItem && selectedItem.path
+			? Launcher.uniqueLogPathForFile(selectedItem.path)
+			: ""
 
-		lastLogContents = ""
-		logField.clear()
+        lastLogContents = ""
+        logField.clear()
 
-		console.log(currentLogPath)
+        if (enableLogging.checked) pollLog()
+    }
 
-		if (enableLogging.checked)
-			pollLog()
-	}
-
-	function pollLog() {
-        if (!enableLogging.checked || !currentLogPath)
-            return
-
+    function pollLog() {
+        if (!enableLogging.checked || !currentLogPath) return
         const path = currentLogPath
-        
-        // Ensure we are still looking at the active log path
-        if (path !== editWindow.currentLogPath)
-            return
+        if (path !== editWindow.currentLogPath) return
 
-        // Read directly via C++ helper (bypasses caching and file:// restrictions)
         const content = Launcher.readTextFile(path)
         
         if (content !== editWindow.lastLogContents) {
@@ -230,7 +218,7 @@ Window {
                             id: entryPointField
 
                             Layout.fillWidth: true
-                            placeholderText: "/home/user/.config/Vencord/dist/patcher.js"
+                            placeholderText: "/home/claration/.config/Vencord/dist/patcher.js"
 
                             onTextEdited: {
                                 SettingsHelper.settings.entryPoint = text
@@ -247,12 +235,14 @@ Window {
                         text: "Launch arguments"
                         font.bold: true
                         font.pixelSize: 15
+						visible: Qt.platform.os !== "windows"
                     }
 
                     Label {
                         text: "Advanced users may choose to customize Discords & Electrons startup options."
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
+						visible: Qt.platform.os !== "windows"
                     }
 
                     TextField {
@@ -260,6 +250,7 @@ Window {
 
                         Layout.fillWidth: true
                         placeholderText: "--start-minimized --enable-blink-features=MiddleClickAutoscroll"
+						visible: Qt.platform.os !== "windows"
 
                         onTextEdited: {
                             SettingsHelper.settings.launchArgs = text

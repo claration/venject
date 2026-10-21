@@ -5,6 +5,7 @@ project(VencordLauncher VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(VERSION "1.0.0" CACHE STRING "Version")
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
 	Core
@@ -71,7 +72,9 @@ qt_add_qml_module(${PROJECT_NAME}
 
 qt_add_translations(VencordLauncher TS_FILE_DIR i18n TS_OUTPUT_DIRECTORY i18n)
 
-include(cmake/Git.cmake)
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    VERSION="${VERSION}"
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"

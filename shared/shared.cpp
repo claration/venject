@@ -4,11 +4,11 @@
 #include <filesystem>
 #include <fstream>
 #ifdef _WIN32
-#include <windows.h>
-#else				// _WIN32
-#include <limits.h> // PATH_MAX, setbuffer
-#include <unistd.h> // readlink
-#endif				// _WIN32
+# include <windows.h>
+#else				 // _WIN32
+# include <limits.h> // PATH_MAX, setbuffer
+# include <unistd.h> // readlink
+#endif				 // _WIN32
 
 namespace fs = std::filesystem;
 

@@ -109,11 +109,6 @@ ApplicationWindow {
 			launchArgs,
 			entryPointPath
 		) {
-			console.log("handleLaunchMessage")
-			console.log(path)
-			console.log(launchArgs)
-			console.log(entryPointPath)
-
 			const result = Launcher.checkForUpdates()
 
 			if (!result.success) {

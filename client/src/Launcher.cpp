@@ -17,9 +17,7 @@
 # include <detours.h>
 #endif
 
-Launcher::Launcher(QObject *parent) : QObject(parent)
-{
-}
+Launcher::Launcher(QObject *parent) : QObject(parent){}
 
 void Launcher::launchSelf(
 	const QString	  &path,
@@ -32,12 +30,13 @@ void Launcher::launchSelf(
 	args.append("-l");
 	args.append(path);
 
+	#ifndef Q_OS_WIN32
 	const QStringList arguments = discord_args.split(' ', Qt::SkipEmptyParts);
-
 	for (const QString &discord_arg : arguments) {
 		args.append("-a");
 		args.append(discord_arg);
 	}
+	#endif // Q_OS_WIN32
 
 	if (!entry_point_path.isEmpty()) {
 		args.append("-o");
@@ -63,9 +62,7 @@ void Launcher::launch(
     auto environment = QProcessEnvironment::systemEnvironment();
 
     environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
-    environment.insert(
-        "CLIENT_EXECUTABLE_PATH",
-        QString::fromStdString(shared::OurExecutablePath().string()));
+    environment.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
 
     environment.insert(
         "CLIENT_JS_PATH",
@@ -73,16 +70,9 @@ void Launcher::launch(
             ? QString::fromStdString(shared::ModEntrypointPath().string())
             : entry);
 
-    environment.insert(
-        "CLIENT_ARGV_JSON",
-        QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
+    environment.insert("CLIENT_ARGV_JSON", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
 
-	const QString executableName = QFileInfo(path).completeBaseName();
-
-	const QString logPath = QDir::temp().filePath(
-		QString("%1.log").arg(executableName));
-
-    qDebug() << "Discord stdout/stderr log:" << logPath;
+	const QString logPath = uniqueLogPathForFile(path);
 
 #ifdef Q_OS_WIN32
 
@@ -110,39 +100,6 @@ void Launcher::launch(
 
     // Build the command line.
     std::wstring commandLine = L"\"" + path.toStdWString() + L"\"";
-
-    const QStringList arguments = args.split(' ', Qt::SkipEmptyParts);
-
-    for (const auto &arg : arguments)
-    {
-        commandLine += L" \"";
-
-        const std::wstring wideArg = arg.toStdWString();
-        size_t backslashes = 0;
-
-        for (wchar_t c : wideArg)
-        {
-            if (c == L'\\')
-            {
-                ++backslashes;
-            }
-            else if (c == L'"')
-            {
-                commandLine.append(backslashes * 2 + 1, L'\\');
-                commandLine += L'"';
-                backslashes = 0;
-            }
-            else
-            {
-                commandLine.append(backslashes, L'\\');
-                backslashes = 0;
-                commandLine += c;
-            }
-        }
-
-        commandLine.append(backslashes * 2, L'\\');
-        commandLine += L'"';
-    }
 
     std::vector<wchar_t> mutableCommandLine(
         commandLine.begin(), commandLine.end());
@@ -221,17 +178,7 @@ void Launcher::launch(
     process.setStandardOutputFile(logPath, QIODevice::Truncate);
     process.setStandardErrorFile(logPath, QIODevice::Append);
 
-    qDebug() << "path:" << path;
-    qDebug() << "args:" << args;
-    qDebug() << "entry:" << entry;
-    qDebug() << "argv:" << argv;
-    qDebug() << "log:" << logPath;
-
-    if (!process.startDetached())
-    {
-        qWarning() << "Failed to launch Discord:" << path;
-    }
-
+    process.startDetached();
 #endif
 }
 
@@ -272,4 +219,49 @@ QVariantMap Launcher::updateVencord()
 	return {
 		{"success", result.success},
 		{"error", result.error}};
+}
+
+static inline QString cleanFilePath(const QString &path) {
+    QString cleanPath = path;
+    if (cleanPath.startsWith("file://")) {
+        cleanPath.remove(0, 7);
+    }
+    return cleanPath;
+}
+
+#include <cstdint>
+#include <string>
+
+/// This is used for creating a unique tiny string
+static uint16_t hashString(const std::u16string& str) {
+    uint64_t h = 0x189d7;
+    for (char16_t c : str) {
+        h = h * 33 + static_cast<uint64_t>(c);
+    }
+    uint64_t mixed = (((h * 33 + (h >> 16)) 
+		* 33 + (h >> 32)) * 33 + (h >> 48));
+    return static_cast<uint16_t>(mixed);
+}
+
+QString Launcher::uniqueLogPathForFile(const QString &id) {
+    QString cleanPath = cleanFilePath(id);
+    
+    uint16_t pathHash = hashString(cleanPath.toStdU16String());
+    QString fileName = QString::number(pathHash);
+
+    return QDir::temp().filePath(QString("%1.log").arg(fileName));
+}
+
+
+#include <QFile>
+#include <QTextStream>
+
+QString Launcher::readTextFile(const QString &id) {
+    QFile file(id);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        return in.readAll();
+    }
+
+    return QString();
 }
