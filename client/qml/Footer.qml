@@ -11,26 +11,28 @@ Item {
 	property bool showEditButton: false
 	signal editRequested()
 
-	Rectangle {
-		anchors.fill: parent
-		color: sysPalette.window
-	}
-
 	RowLayout {
 		anchors.fill: parent
 		anchors.margins: 12
 		spacing: 12
 
-		Label {
-			text: root.selectedItem
-				? (selectedItem.branch
-					+ (selectedItem.isFlatpak ? " (Flatpak)" : "")
-					+ "\n" + selectedItem.id)
-				: qsTr("No installation selected")
-			font.pixelSize: 12
-			color: sysPalette.text
+		Button {
+			text: qsTr("Add Instance")
+			visible: root.showEditButton
+		}
+
+		Item {
 			Layout.fillWidth: true
-			elide: Text.ElideRight
+		}
+
+		Button {
+			text: qsTr("View Folder")
+			enabled: root.selectedItem !== null
+			onClicked: {
+				if (root.selectedItem) {
+					Qt.openUrlExternally("file://" + selectedItem.id) 
+				}
+			}
 		}
 
 		Button {
@@ -42,7 +44,7 @@ Item {
 
 		Button {
 			text: qsTr("Kill")
-			enabled: root.selectedItem !== null
+			enabled: false
 		}
 
 		Button {

@@ -18,8 +18,6 @@ ApplicationWindow {
 	width: 650
 	height: 500
 
-	title: "Vencord Launcher"
-
 	SystemPalette {
 		id: sysPalette
 		colorGroup: SystemPalette.Active
@@ -132,6 +130,18 @@ ApplicationWindow {
 		anchors.fill: parent
 		spacing: 0
 
+		Footer {
+			id: bottomBarRoot
+			Layout.fillWidth: true
+			selectedItem: root.selectedItem
+
+			showEditButton: true
+			onEditRequested: {
+				editWindow.selectedItem = root.selectedItem
+				editWindow.show()
+			}
+		}
+
 		Rectangle {
 			Layout.fillWidth: true
 			height: 1
@@ -170,16 +180,26 @@ ApplicationWindow {
 			color: sysPalette.light
 		}
 
-		Footer {
-			id: bottomBarRoot
-			Layout.fillWidth: true
-			selectedItem: root.selectedItem
+		Control {
+			padding: 4
 
-			showEditButton: true
-			onEditRequested: {
-				editWindow.selectedItem = root.selectedItem
-				editWindow.show()
+			contentItem: RowLayout {
+				spacing: 12
+
+				Label {
+					text: root.selectedItem
+						? (selectedItem.branch
+							+ (selectedItem.isFlatpak ? " (Flatpak)" : "")
+							+ " — " + selectedItem.id)
+						: qsTr("No installation selected")
+
+					font.pixelSize: 12
+					color: sysPalette.text
+					Layout.fillWidth: true
+					elide: Text.ElideRight
+				}
 			}
 		}
+
 	}
 }

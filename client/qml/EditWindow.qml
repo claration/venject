@@ -63,11 +63,6 @@ Window {
         anchors.fill: parent
         spacing: 0
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 1
-            color: sysPalette.light
-        }
 
         TabBar {
             id: tabBar
