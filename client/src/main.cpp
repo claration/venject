@@ -31,6 +31,10 @@ int main(int argc, char **argv)
         qputenv("QT_QUICK_BACKEND", "software");
     }
 
+	// TODO: remove -a from windows
+	// TODO: remove args being passed into discord on windows / detours
+	// TODO: make version a preprocessor variable instead
+
 	QGuiApplication	app(argc, argv);
 
 	app.setOrganizationName("claration");
