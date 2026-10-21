@@ -64,18 +64,27 @@ void Launcher::launch(
     environment.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
     environment.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
 
-    environment.insert(
-        "CLIENT_JS_PATH",
-        entry.isEmpty()
-            ? QString::fromStdString(shared::ModEntrypointPath().string())
-            : entry);
+    QString jsPath = entry.isEmpty()
+        ? QString::fromStdString(shared::ModEntrypointPath().string())
+        : entry;
 
+    // we're special just like how windows is special
+    // this is done for the gui launcher, we store settings 
+    // in a specific way.
+    #ifdef Q_OS_WIN
+    if (jsPath.startsWith('/') &&
+        jsPath.size() >= 3 &&
+        jsPath[2] == ':') {
+        jsPath.remove(0, 1);
+    }
+    #endif
+
+    environment.insert("CLIENT_JS_PATH", QDir::toNativeSeparators(jsPath));
     environment.insert("CLIENT_ARGV_JSON", QJsonDocument(jsonArgs).toJson(QJsonDocument::Compact));
 
 	const QString logPath = uniqueLogPathForFile(path);
 
 #ifdef Q_OS_WIN32
-
     environment.insert(
         "HOOK_DLL_PATH",
         QString::fromStdString(paths::OurHookLibraryPath().string()));
@@ -95,40 +104,43 @@ void Launcher::launch(
         environmentBlock.push_back(L'\0');
     }
 
-    // Environment blocks must end with two null characters.
     environmentBlock.push_back(L'\0');
 
-    // Build the command line.
     std::wstring commandLine = L"\"" + path.toStdWString() + L"\"";
+    if (!args.isEmpty()) {
+        commandLine += L" " + args.toStdWString();
+    }
 
     std::vector<wchar_t> mutableCommandLine(
         commandLine.begin(), commandLine.end());
 
     mutableCommandLine.push_back(L'\0');
 
-    // Open the log file. The child process inherits this handle.
-    HANDLE logFile = CreateFileW(
-        reinterpret_cast<LPCWSTR>(logPath.utf16()),
-        FILE_APPEND_DATA,
+    SECURITY_ATTRIBUTES sa{};
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+
+    HANDLE hLogFile = CreateFileW(
+        logPath.toStdWString().c_str(),
+        FILE_WRITE_DATA | FILE_APPEND_DATA,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
+        &sa,
         CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL,
-        nullptr);
+        nullptr
+    );
 
-    if (logFile == INVALID_HANDLE_VALUE)
-    {
-        qWarning() << "Failed to open log file:"
-                   << logPath << GetLastError();
+    if (hLogFile == INVALID_HANDLE_VALUE) {
+        qWarning() << "Failed to create log file for redirection:" << GetLastError();
         return;
     }
 
     STARTUPINFOW startupInfo{};
     startupInfo.cb = sizeof(startupInfo);
-    startupInfo.dwFlags |= STARTF_USESTDHANDLES;
-    startupInfo.hStdOutput = logFile;
-    startupInfo.hStdError = logFile;
+    startupInfo.dwFlags = STARTF_USESTDHANDLES;
     startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startupInfo.hStdOutput = hLogFile;
+    startupInfo.hStdError = hLogFile;
 
     PROCESS_INFORMATION processInfo{};
 
@@ -149,20 +161,15 @@ void Launcher::launch(
             dllPath.c_str(),
             nullptr))
     {
-        qWarning() << "DetourCreateProcessWithDllExW failed:"
-                   << GetLastError();
-
-        CloseHandle(logFile);
+        qWarning() << "DetourCreateProcessWithDllExW failed:" << GetLastError();
+        CloseHandle(hLogFile);
         return;
     }
 
-    CloseHandle(logFile);
-
+    CloseHandle(hLogFile);
     CloseHandle(processInfo.hThread);
     CloseHandle(processInfo.hProcess);
-
-#else
-
+    #else
     environment.insert(
         "LD_PRELOAD",
         QString::fromStdString(paths::OurHookLibraryPath().string()));
@@ -179,7 +186,7 @@ void Launcher::launch(
     process.setStandardErrorFile(logPath, QIODevice::Append);
 
     process.startDetached();
-#endif
+    #endif
 }
 
 QVariantList Launcher::findDiscords()

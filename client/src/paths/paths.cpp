@@ -104,7 +104,7 @@ std::vector<DiscordInstall> FindDiscords()
 			#ifdef _WIN32
             exe += ".exe";
 			#endif
-            if (add(exe, branch, flatpak, base)) {
+            if (add(exe, branch, flatpak, base.string())) {
                 found = true;
                 break;
             }
@@ -115,7 +115,7 @@ std::vector<DiscordInstall> FindDiscords()
 			#ifdef _WIN32
             exe += ".exe";
 			#endif
-            add(exe, branch, flatpak, base);
+            add(exe, branch, flatpak, base.string());
         }
     }
 
