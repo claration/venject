@@ -194,15 +194,6 @@ Window {
                                 logField.deselect()
                             }
                         }
-
-                        Button {
-                            text: "Clear"
-
-                            onClicked: {
-                                editWindow.lastLogContents = ""
-                                logField.clear()
-                            }
-                        }
                     }
                 }
             }
