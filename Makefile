@@ -12,7 +12,7 @@ endif
 all: build
 
 configure:
-	cmake -S . -B build $(CMAKE_GENERATOR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)
+	cmake -S . -B build $(CMAKE_GENERATOR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DQT_DEPLOY_USE_PATCHELF=ON
 
 build: configure
 	cmake --build build --config $(BUILD_TYPE) --parallel $(JOBS)

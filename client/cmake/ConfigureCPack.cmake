@@ -73,6 +73,10 @@ qt_generate_deploy_qml_app_script(
 		KDEPlasmaPlatformTheme6
 		layer-shell
 
+	INCLUDE_PLUGINS
+		xcb
+		wayland
+
 	POST_EXCLUDE_REGEXES
 		"libc\\.so.*"
 		"libm\\.so.*"
