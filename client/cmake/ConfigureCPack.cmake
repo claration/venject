@@ -2,15 +2,15 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
 # what the fuck
 if(WIN32 AND MINGW)
-    get_filename_component(MINGW_BIN_DIR
-        "${CMAKE_CXX_COMPILER}"
-        DIRECTORY
-    )
+	get_filename_component(MINGW_BIN_DIR
+		"${CMAKE_CXX_COMPILER}"
+		DIRECTORY
+	)
 
-    install(FILES
-        "${MINGW_BIN_DIR}/libgcc_s_seh-1.dll"
-        "${MINGW_BIN_DIR}/libstdc++-6.dll"
-        "${MINGW_BIN_DIR}/libwinpthread-1.dll"
+	install(FILES
+		"${MINGW_BIN_DIR}/libgcc_s_seh-1.dll"
+		"${MINGW_BIN_DIR}/libstdc++-6.dll"
+		"${MINGW_BIN_DIR}/libwinpthread-1.dll"
 		"${MINGW_BIN_DIR}/zlib1.dll"
 		"${MINGW_BIN_DIR}/libzstd.dll"
 		"${MINGW_BIN_DIR}/libfreetype-6.dll"
@@ -31,12 +31,17 @@ if(WIN32 AND MINGW)
 		"${MINGW_BIN_DIR}/libintl-8.dll"
 		"${MINGW_BIN_DIR}/libpcre2-8-0.dll"
 		"${MINGW_BIN_DIR}/libiconv-2.dll"
-        DESTINATION bin
-    )
+		DESTINATION bin
+	)
 endif()
 
 
 cmake_policy(SET CMP0153 NEW)
+
+set(include_plugins "")
+if(LINUX)
+	set(include_plugins INCLUDE_PLUGINS wayland xcb)
+endif()
 
 qt_generate_deploy_qml_app_script(
 	TARGET ${PROJECT_NAME}
@@ -73,9 +78,7 @@ qt_generate_deploy_qml_app_script(
 		KDEPlasmaPlatformTheme6
 		layer-shell
 
-	INCLUDE_PLUGINS
-		xcb
-		wayland
+	${include_plugins}
 
 	POST_EXCLUDE_REGEXES
 		"libc\\.so.*"
