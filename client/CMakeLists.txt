@@ -32,6 +32,7 @@ qt_add_executable(${PROJECT_NAME}
 	src/network.cpp
 	src/paths/paths.cpp
 	../shared/shared.cpp
+		src/windows.cpp
 )
 
 if(WIN32)

@@ -43,6 +43,9 @@ Item {
 			text: qsTr("Create Shortcut")
 			icon.name: "edit-paste"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+            onTriggered: {
+                Launcher.createShortcut(modelData.id, modelData.branch)
+            }
 		}
 	}
 

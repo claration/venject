@@ -7,14 +7,18 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QStringList>
+#include <QGuiApplication>
 
 #include "../../shared/shared.hpp"
 #include "network.hpp"
 #include "paths/paths.hpp"
 
 #ifdef Q_OS_WIN32
+#include "windows.hpp"
+
 #include <windows.h>
 #include <detours.h>
+#include <ShlObj.h>
 #endif
 
 Launcher::Launcher(QObject *parent) : QObject(parent)
@@ -297,4 +301,38 @@ QString Launcher::readTextFile(const QString &id)
 	}
 
 	return QString();
+}
+void Launcher::createShortcut(
+	const QString &uniqueIdentifier,
+	const QString &branch,
+	const bool	   autoStart)
+{
+#ifdef Q_OS_WIN32
+	PWSTR path = nullptr;
+
+	HRESULT hr = SHGetKnownFolderPath(
+		autoStart ? FOLDERID_Startup : FOLDERID_Programs,
+		0,
+		nullptr,
+		&path);
+
+	if (FAILED(hr))
+		qFatal() << "Couldn't get startup path";
+
+	const QString result = QString::fromWCharArray(path);
+	CoTaskMemFree(path);
+
+	QString shortcutPath = QDir{result}.absoluteFilePath("Discord " + branch + " (Venject).lnk");
+	if (QDir{shortcutPath}.exists())
+		qFatal() << "Shortcut already exists";
+
+	bool succeeded = windows::createShortcut(
+		shortcutPath,
+		QGuiApplication::applicationFilePath(),
+		"--id \"" + uniqueIdentifier + "\"");
+	if (!succeeded)
+		qFatal() << "Couldn't create shortcut path";
+
+#elif __defined__(Q_OS_LINUX)
+#endif
 }
