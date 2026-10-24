@@ -15,6 +15,7 @@ find_package(Qt6 CONFIG REQUIRED COMPONENTS
 	Quick
 	QuickControls2
 	LinguistTools
+	Widgets
 )
 
 # =========================
@@ -32,6 +33,7 @@ qt_add_executable(${PROJECT_NAME}
 	src/network.cpp
 	src/paths/paths.cpp
 	../shared/shared.cpp
+		src/windows.cpp
 )
 
 if(WIN32)
@@ -99,6 +101,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	Qt6::Qml
 	Qt6::Quick
 	Qt6::QuickControls2
+	Qt6::Widgets
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -112,9 +115,11 @@ if(APPLE)
 endif()
 
 if(MINGW)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
-		WIN32_EXECUTABLE TRUE
-	)
+	if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+		set_target_properties(${PROJECT_NAME} PROPERTIES
+				WIN32_EXECUTABLE TRUE
+		)
+	endif ()
 
 	target_link_libraries(${PROJECT_NAME} PRIVATE
 		lib_detours

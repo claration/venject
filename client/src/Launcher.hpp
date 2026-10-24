@@ -24,4 +24,6 @@ class Launcher : public QObject
 
 	Q_INVOKABLE QString uniqueLogPathForFile(const QString &id);
 	Q_INVOKABLE QString readTextFile(const QString &id);
+
+	Q_INVOKABLE void createShortcut(const QString &uniqueIdentifier, const QString &branch, bool autoStart = false);
 };

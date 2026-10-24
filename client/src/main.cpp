@@ -7,7 +7,7 @@
 
 #include <QCommandLineParser>
 #include <QCoreApplication>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QIcon>
 #include <QObject>
 #include <QQmlApplicationEngine>
@@ -28,11 +28,11 @@ int main(int argc, char **argv)
 
 	// force software renderer because some people
 	// might not have a gpu
-	if (qgetenv("QT_QUICK_BACKEND").isEmpty()) {
+	if (qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND")) {
 		qputenv("QT_QUICK_BACKEND", "software");
 	}
 
-	QGuiApplication app(argc, argv);
+	QApplication app(argc, argv);
 
 	app.setOrganizationName("claration");
 	app.setOrganizationDomain("clarati.on");
