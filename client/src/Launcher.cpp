@@ -304,6 +304,7 @@ QString Launcher::readTextFile(const QString &id)
 
 	return QString();
 }
+
 void Launcher::createShortcut(
 	const QString &uniqueIdentifier,
 	const QString &branch,

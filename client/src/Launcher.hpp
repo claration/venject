@@ -5,7 +5,7 @@
 #include <QVariant>
 #include <QVariantList>
 #include <QVariantMap>
-#include <qqmlintegration.h>
+#include <QtQmlIntegration>
 
 class Launcher : public QObject
 {
