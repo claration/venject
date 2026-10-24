@@ -8,6 +8,8 @@
 #include <QProcessEnvironment>
 #include <QStringList>
 #include <QGuiApplication>
+#include <QMessageBox>
+#include <QFileInfo>
 
 #include "../../shared/shared.hpp"
 #include "network.hpp"
@@ -316,15 +318,25 @@ void Launcher::createShortcut(
 		nullptr,
 		&path);
 
-	if (FAILED(hr))
-		qFatal() << "Couldn't get startup path";
+	if (FAILED(hr)) {
+		QMessageBox::warning(
+			nullptr,
+			tr("Failed to create shortcut"),
+			tr("Couldn't get known folder path"));
+		return;
+	}
 
 	const QString result = QString::fromWCharArray(path);
 	CoTaskMemFree(path);
 
 	QString shortcutPath = QDir{result}.absoluteFilePath("Discord " + branch + " (Venject).lnk");
-	if (QDir{shortcutPath}.exists())
-		qFatal() << "Shortcut already exists";
+	if (QFileInfo{shortcutPath}.exists()) {
+		QMessageBox::warning(
+			nullptr,
+			tr("Failed to create shortcut"),
+			tr("A shortcut already exists"));
+		return;
+	}
 
 	bool succeeded = windows::createShortcut(
 		shortcutPath,
