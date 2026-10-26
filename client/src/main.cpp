@@ -55,14 +55,14 @@ int main(int argc, char **argv)
 	for (int i = 0; i < argc; ++i)
 		launch_mod_argv.append(QString::fromLocal8Bit(argv[i]));
 
+#ifdef Q_OS_WIN
+	QSettings::setDefaultFormat(QSettings::IniFormat);
+#endif
+
 	if (!launchId.isEmpty()) {
 		LaunchInstance::launchById(launchId, launch_mod_argv);
 		return 0;
 	}
-
-#ifdef Q_OS_WIN
-	QSettings::setDefaultFormat(QSettings::IniFormat);
-#endif
 
 	QQmlApplicationEngine engine;
 
