@@ -8,16 +8,16 @@ import VencordLauncher
 Window {
 	id: editWindow
 
-	width: 650
-	height: 500
+	width: 600
+	height: 480
 	visible: true
 
-	required property var selectedItem
+	property var selectedItem: null
 
-	property string currentLogPath: ""
 	property string lastLogContents: ""
+	property var envModel: []
 
-	title: selectedItem.branch + (selectedItem.isFlatpak ? " (Flatpak)" : "")
+	title: selectedItem ? selectedItem.name : qsTr("Edit Instance")
 
 	SystemPalette {
 		id: sysPalette
@@ -26,92 +26,62 @@ Window {
 
 	color: sysPalette.window
 
-	function loadSettings() {
-		entryPointField.text = SettingsHelper.settings.entryPoint
-		userDataField.text = SettingsHelper.settings.userData
-		launchArgsField.text = SettingsHelper.settings.launchArgs
-		notesField.text = SettingsHelper.settings.notes
-		enableLogging.checked = SettingsHelper.settings.enableLogging
-		enableLoggingWrap.checked = SettingsHelper.settings.enableLoggingWrap
-	}
+	function loadData() {
+		if (!selectedItem) return
+		launchArgsField.text = selectedItem.launchArguments || ""
+		entryPointField.text = selectedItem.entryPointPath || ""
+		notesField.text = selectedItem.notes || ""
+		enableLogging.checked = selectedItem.enableLogging || false
+		enableLoggingWrap.checked = selectedItem.enableLoggingWrap || false
 
-	function selectItem() {
-		SettingsHelper.currentItemId = String(selectedItem.id)
-		loadSettings()
+		let envs = selectedItem.environmentVariables || {}
+		let arr = []
+		for (let key in envs) {
+			arr.push({ key: key, value: envs[key] })
+		}
+		envModel = arr
 		updateLogPath()
 	}
 
 	function updateLogPath() {
-		currentLogPath = selectedItem && selectedItem.path ? Launcher.uniqueLogPathForFile(
-																 selectedItem.path) : ""
-
 		lastLogContents = ""
 		logField.clear()
-
-		if (enableLogging.checked)
-			pollLog()
+		if (enableLogging.checked) pollLog()
 	}
 
 	function pollLog() {
-		if (!enableLogging.checked || !currentLogPath)
-			return
-		const path = currentLogPath
-		if (path !== editWindow.currentLogPath)
-			return
-		const content = Launcher.readTextFile(path)
-
-		if (content !== editWindow.lastLogContents) {
-			editWindow.lastLogContents = content
+		if (!enableLogging.checked || !selectedItem) return
+		const content = selectedItem.logPathRead
+		if (content !== lastLogContents) {
+			lastLogContents = content
 			logField.text = content
 			logField.cursorPosition = logField.length
 		}
 	}
 
-	Component.onCompleted: selectItem()
-
-	onSelectedItemChanged: {
-		if (selectedItem) {
-			selectItem()
-		} else {
-			currentLogPath = ""
-			lastLogContents = ""
-			logField.clear()
-		}
-	}
+	Component.onCompleted: loadData()
+	onSelectedItemChanged: if (selectedItem) loadData()
 
 	FileDialog {
 		id: entryPointFileDialog
-
-		title: "Choose a Vencord entrypoint (patcher.js)"
+		title: "Choose Vencord Entrypoint"
 		fileMode: FileDialog.OpenFile
 		nameFilters: ["Patcher files (*.js)", "All files (*)"]
-
 		onAccepted: {
 			const path = selectedFile.toString().replace("file://", "")
 			entryPointField.text = path
-			SettingsHelper.settings.entryPoint = path
-		}
-	}
-
-	FolderDialog {
-		id: userDataFileDialog
-
-		title: "Choose a Vencord data directory"
-
-		onAccepted: {
-			const path = selectedFolder.toString().replace("file://", "")
-			userDataField.text = path
-			SettingsHelper.settings.userData = path
+			if (selectedItem) {
+				selectedItem.entryPointPath = path
+				selectedItem.saveInstance()
+			}
 		}
 	}
 
 	Timer {
 		id: logPollTimer
-
 		interval: 1000
 		repeat: true
 		running: enableLogging.checked
-
 		onTriggered: editWindow.pollLog()
 	}
 
@@ -123,21 +93,9 @@ Window {
 			id: tabBar
 			Layout.fillWidth: true
 
-			TabButton {
-				text: qsTr("Discord Log")
-				icon.name: "network-server"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/document-list.svg"
-			}
-			TabButton {
-				text: qsTr("Settings")
-				icon.name: "edit-paste"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/settings.svg"
-			}
-			TabButton {
-				text: qsTr("Notes")
-				icon.name: "document-open"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/note.svg"
-			}
+			TabButton { text: qsTr("Discord Log") }
+			TabButton { text: qsTr("Settings") }
+			TabButton { text: qsTr("Notes") }
 		}
 
 		StackLayout {
@@ -145,208 +103,162 @@ Window {
 			Layout.fillHeight: true
 			currentIndex: tabBar.currentIndex
 
-			// Discord Log tab
-			Item {
-				ColumnLayout {
-					anchors.fill: parent
-					anchors.margins: 12
-					spacing: 12
+			// Discord Log
+			ColumnLayout {
+				anchors.margins: 12
+				spacing: 8
 
-					Label {
-						text: qsTr("Discord Log")
-						font.bold: true
-						font.pixelSize: 18
+				ScrollView {
+					Layout.fillWidth: true
+					Layout.fillHeight: true
+					TextArea {
+						id: logField
+						readOnly: true
+						selectByMouse: true
+						wrapMode: (selectedItem && selectedItem.enableLoggingWrap) ? TextEdit.Wrap : TextEdit.NoWrap
 					}
+				}
 
-					ScrollView {
-						Layout.fillWidth: true
-						Layout.fillHeight: true
-
-						TextArea {
-							id: logField
-
-							readOnly: true
-							selectByMouse: true
-							wrapMode: enableLoggingWrap.checked ? TextEdit.Wrap : TextEdit.NoWrap
+				RowLayout {
+					Button {
+						text: qsTr("Copy")
+						onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
+					}
+					CheckBox {
+						id: enableLogging
+						text: qsTr("Keep updating")
+						onToggled: {
+							if (selectedItem) {
+								selectedItem.enableLogging = checked
+								selectedItem.saveInstance()
+							}
+							if (checked) editWindow.pollLog()
 						}
 					}
+					CheckBox {
+						id: enableLoggingWrap
+						text: qsTr("Wrap Lines")
+						onToggled: {
+							if (selectedItem) {
+								selectedItem.enableLoggingWrap = checked
+								selectedItem.saveInstance()
+							}
+						}
+					}
+				}
+			}
 
-					RowLayout {
+			// Settings
+			ScrollView {
+				id: scrollView
+				clip: true
+				Pane {
+					width: scrollView.availableWidth
+					padding: 12
+					background: null
+
+					ColumnLayout {
+						width: parent.width
+						spacing: 12
+
+						Label { text: qsTr("Launch Arguments"); font.bold: true }
+						TextField {
+							id: launchArgsField
+							Layout.fillWidth: true
+							placeholderText: "--disable-gpu --enable-features=UseOzonePlatform"
+							onTextEdited: {
+								if (selectedItem) {
+									selectedItem.launchArguments = text
+									selectedItem.saveInstance()
+								}
+							}
+						}
+
+						Label { text: qsTr("Custom Entry Point (patcher.js)"); font.bold: true }
+						RowLayout {
+							Layout.fillWidth: true
+							TextField {
+								id: entryPointField
+								Layout.fillWidth: true
+								onTextEdited: {
+									if (selectedItem) {
+										selectedItem.entryPointPath = text
+										selectedItem.saveInstance()
+									}
+								}
+							}
+							Button {
+								text: qsTr("Browse")
+								onClicked: entryPointFileDialog.open()
+							}
+						}
+
+						Label { text: qsTr("Environment Variables"); font.bold: true }
+						Repeater {
+							model: editWindow.envModel
+							delegate: RowLayout {
+								required property var modelData
+								required property int index
+								Layout.fillWidth: true
+								spacing: 8
+
+								TextField {
+									Layout.preferredWidth: 140
+									placeholderText: "KEY"
+									text: modelData.key
+									onTextEdited: {
+										editWindow.envModel[index].key = text
+										saveEnv()
+									}
+								}
+								TextField {
+									Layout.fillWidth: true
+									placeholderText: "VALUE"
+									text: modelData.value
+									onTextEdited: {
+										editWindow.envModel[index].value = text
+										saveEnv()
+									}
+								}
+								Button {
+									text: "✕"
+									onClicked: {
+										let arr = Array.from(editWindow.envModel)
+										arr.splice(index, 1)
+										editWindow.envModel = arr
+										saveEnv()
+									}
+								}
+							}
+						}
 
 						Button {
-							text: qsTr("Copy")
-
+							text: qsTr("Add Environment Variable")
 							onClicked: {
-								logField.selectAll()
-								logField.copy()
-								logField.deselect()
-							}
-						}
-
-						CheckBox {
-							id: enableLogging
-
-							text: qsTr("Keep updating")
-
-							onToggled: {
-								SettingsHelper.settings.enableLogging = checked
-
-								if (checked)
-									editWindow.pollLog()
-							}
-						}
-
-						CheckBox {
-							id: enableLoggingWrap
-
-							text: qsTr("Wrap Lines")
-
-							onToggled: {
-								SettingsHelper.settings.enableLoggingWrap = checked
+								let arr = Array.from(editWindow.envModel)
+								arr.push({ key: "", value: "" })
+								editWindow.envModel = arr
 							}
 						}
 					}
 				}
 			}
 
-			// Settings tab
-			Item {
-				ScrollView {
-					id: scrollView
-					anchors.fill: parent
-					clip: true
-
-					Pane {
-						width: scrollView.availableWidth
-						padding: 12
-						background: null
-
-						ColumnLayout {
-							width: parent.width
-							spacing: 12
-
-							Label {
-								text: qsTr("Settings")
-								font.bold: true
-								font.pixelSize: 18
-							}
-
-							Label {
-								text: qsTr("Vencord Installation")
-								font.bold: true
-								font.pixelSize: 15
-							}
-
-							Label {
-								text: qsTr("Custom Vencord entry point path, keep blank for default.\n\nNote: choosing a custom location will disable the update alert.")
-								wrapMode: Text.WordWrap
-								Layout.fillWidth: true
-							}
-
-							RowLayout {
-								Layout.fillWidth: true
-								spacing: 12
-
-								TextField {
-									id: entryPointField
-
-									Layout.fillWidth: true
-									placeholderText: "/home/claration/.config/Vencord/dist/patcher.js"
-
-									onTextEdited: {
-										SettingsHelper.settings.entryPoint = text
-									}
-								}
-
-								Button {
-									text: qsTr("Browse")
-									onClicked: entryPointFileDialog.open()
-								}
-							}
-
-							Label {
-								text: qsTr("Custom Vencord data path, keep blank for default.\n\nNote: choosing a custom location will disable the update alert.")
-								wrapMode: Text.WordWrap
-								Layout.fillWidth: true
-							}
-
-							RowLayout {
-								Layout.fillWidth: true
-								spacing: 12
-
-								TextField {
-									id: userDataField
-
-									Layout.fillWidth: true
-									placeholderText: "/home/claration/.config/Vencord"
-
-									onTextEdited: {
-										SettingsHelper.settings.userData = text
-									}
-								}
-
-								Button {
-									text: qsTr("Browse")
-									onClicked: userDataFileDialog.open()
-								}
-							}
-
-							Label {
-								text: qsTr("Launch arguments")
-								font.bold: true
-								font.pixelSize: 15
-								visible: Qt.platform.os !== "windows"
-							}
-
-							Label {
-								text: qsTr("Advanced users may choose to customize Discords & Electrons startup options.")
-								wrapMode: Text.WordWrap
-								Layout.fillWidth: true
-								visible: Qt.platform.os !== "windows"
-							}
-
-							TextField {
-								id: launchArgsField
-
-								Layout.fillWidth: true
-								placeholderText: "--start-minimized --enable-blink-features=MiddleClickAutoscroll"
-								visible: Qt.platform.os !== "windows"
-
-								onTextEdited: {
-									SettingsHelper.settings.launchArgs = text
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// Notes tab
-			Item {
-				ColumnLayout {
-					anchors.fill: parent
-					anchors.margins: 12
-					spacing: 12
-
-					Label {
-						text: qsTr("Notes")
-						font.bold: true
-						font.pixelSize: 18
-					}
-
-					TextArea {
-						id: notesField
-
-						Layout.fillWidth: true
-						Layout.fillHeight: true
-
-						placeholderText: qsTr("Enter notes here that useful for you...")
-						wrapMode: TextEdit.Wrap
-						selectByMouse: true
-
-						onTextChanged: {
-							if (activeFocus)
-								SettingsHelper.settings.notes = text
+			// Notes
+			ColumnLayout {
+				anchors.margins: 12
+				spacing: 8
+				TextArea {
+					id: notesField
+					Layout.fillWidth: true
+					Layout.fillHeight: true
+					placeholderText: qsTr("Enter notes here...")
+					wrapMode: TextEdit.Wrap
+					selectByMouse: true
+					onTextChanged: {
+						if (activeFocus && selectedItem) {
+							selectedItem.notes = text
+							selectedItem.saveInstance()
 						}
 					}
 				}
@@ -363,7 +275,25 @@ Window {
 			Layout.fillWidth: true
 			Layout.preferredHeight: 55
 			selectedItem: editWindow.selectedItem
-			showEditButton: false
+
+			Item { Layout.fillWidth: true }
+
+			Button {
+				text: qsTr("Close")
+				onClicked: editWindow.close()
+			}
 		}
+	}
+
+	function saveEnv() {
+		if (!selectedItem) return
+		let map = {}
+		for (let i = 0; i < envModel.length; i++) {
+			if (envModel[i].key.trim() !== "") {
+				map[envModel[i].key] = envModel[i].value
+			}
+		}
+		selectedItem.environmentVariables = map
+		selectedItem.saveInstance()
 	}
 }

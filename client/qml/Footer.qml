@@ -7,9 +7,8 @@ Item {
 	Layout.fillWidth: true
 	height: 55
 
+	default property alias contentData: customItemsLayout.data
 	required property var selectedItem
-	property bool showEditButton: false
-	signal editRequested
 
 	Rectangle {
 		anchors.fill: parent
@@ -22,53 +21,9 @@ Item {
 		spacing: 12
 
 		RowLayout {
-			spacing: 10
-
-			Image {
-				Layout.alignment: Qt.AlignVCenter
-				Layout.preferredWidth: 24
-				Layout.preferredHeight: 24
-				sourceSize: Qt.size(24, 24)
-				source: {
-					const branch = selectedItem && selectedItem.branch ? selectedItem.branch.toLowerCase(
-																			 ) : ""
-					if (branch.includes("canary"))
-						return "qrc:/VencordLauncher/resources/canary.svg"
-					if (branch.includes("development") || branch.includes("ptb"))
-						return "qrc:/VencordLauncher/resources/development.svg"
-					return "qrc:/VencordLauncher/resources/stable.svg"
-				}
-				fillMode: Image.PreserveAspectFit
-			}
-
-			ColumnLayout {
-				Layout.fillWidth: true
-				Layout.alignment: Qt.AlignVCenter
-				spacing: 2
-
-				Label {
-					Layout.fillWidth: true
-					text: selectedItem ? (selectedItem.branch + (selectedItem.isFlatpak ? " (Flatpak)" :
-																						  "")) : qsTr("No installation selected")
-					font.pixelSize: 12
-					font.bold: true
-					color: sysPalette.text
-					elide: Text.ElideRight
-				}
-
-				Label {
-					Layout.fillWidth: true
-					visible: selectedItem !== null
-					text: selectedItem ? selectedItem.id : ""
-					font.pixelSize: 11
-					color: sysPalette.placeholderText
-					elide: Text.ElideRight
-				}
-			}
-		}
-
-		Item {
-			Layout.fillWidth: true
+			id: customItemsLayout
+			Layout.fillHeight: true
+			spacing: 12
 		}
 
 		Button {
@@ -78,22 +33,9 @@ Item {
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
-					if (Qt.platform.os == "windows") {
-						Qt.openUrlExternally("file:///" + selectedItem.id)
-					} else {
-						Qt.openUrlExternally("file://" + selectedItem.id)
-					}
+					Qt.openUrlExternally("file://" + selectedItem.folderPath)
 				}
 			}
-		}
-
-		Button {
-			text: qsTr("Edit")
-			icon.name: "edit-paste"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
-			visible: root.showEditButton
-			enabled: root.selectedItem !== null
-			onClicked: root.editRequested()
 		}
 
 		Button {
@@ -103,12 +45,7 @@ Item {
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
-					LaunchHelper.handleLaunch(
-						root.selectedItem.path,
-						SettingsHelper.settings.launchArgs,
-						SettingsHelper.settings.entryPoint,
-						SettingsHelper.settings.userData
-					)
+					selectedItem.launch()
 				}
 			}
 		}

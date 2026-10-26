@@ -16,7 +16,8 @@ namespace utils
 
 std::string write_payload_to_tmp()
 {
-	const auto path = shared::ModDistPath() / (MOD_NAME + std::string(".asar"));
+	const auto path = std::filesystem::temp_directory_path()
+		/ (MOD_NAME + std::string(".asar"));
 
 	if (!std::filesystem::exists(path)) {
 		std::ofstream file(path, std::ios::binary);

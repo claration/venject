@@ -1,3 +1,5 @@
+#ifdef Q_OS_WIN32
+
 #include "windows.hpp"
 
 #include <Windows.h>
@@ -66,3 +68,5 @@ bool windows::createShortcut(
 
 	return SUCCEEDED(hr);
 }
+
+#endif

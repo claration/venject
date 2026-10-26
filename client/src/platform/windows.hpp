@@ -17,4 +17,6 @@ bool createShortcut(
 	const QString &iconPath			= {});
 
 }
+
 #endif
+

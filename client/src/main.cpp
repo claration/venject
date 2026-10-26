@@ -1,10 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
-#include <getopt.h> // getopt_long
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <QCommandLineParser>
 #include <QCoreApplication>
 #include <QApplication>
@@ -19,7 +12,8 @@
 #include <QVariantList>
 #include <QVariantMap>
 
-#include "Launcher.hpp"
+#include "DiscordInstall.hpp"
+#include "LaunchInstance.hpp"
 
 int main(int argc, char **argv)
 {
@@ -34,7 +28,7 @@ int main(int argc, char **argv)
 
 	QApplication app(argc, argv);
 
-	app.setOrganizationName("claration");
+	app.setOrganizationName("VencordLauncher");
 	app.setOrganizationDomain("clarati.on");
 	app.setApplicationName("VencordLauncher");
 	app.setApplicationDisplayName("Vencord Launcher " VERSION);
@@ -51,45 +45,19 @@ int main(int argc, char **argv)
 	parser.addHelpOption();
 	parser.addVersionOption();
 
-	QCommandLineOption launchOpt(QStringList{"l", "launch"}, "Launch a Discord executable", "FILE PATH");
-	parser.addOption(launchOpt);
-
-#ifndef Q_OS_WIN32
-	QCommandLineOption launchArgOpt(QStringList{"a", "launch-arg"}, "Override launch arguments", "ARG");
-	parser.addOption(launchArgOpt);
-#endif // Q_OS_WIN32
-
-	QCommandLineOption overrideEntryOpt(QStringList{"o", "override-entry"}, "Override Vencord patcher", "FILE PATH");
-	parser.addOption(overrideEntryOpt);
-
-	QCommandLineOption overrideDataDirOpt(QStringList{"d", "override-data-dir"}, "Override Vencord data directory", "FILE PATH");
-	parser.addOption(overrideDataDirOpt);
-
+	QCommandLineOption launchIdOpt(QStringList{"i", "id"}, "Launch an existing instance", "ID");
+	parser.addOption(launchIdOpt);
 	parser.process(app);
 
-	QString launch = parser.value(launchOpt);
-#ifndef Q_OS_WIN32
-	QString launchArg = parser.value(launchArgOpt);
-#else  // Q_OS_WIN32
-	QString launchArg{};
-#endif // Q_OS_WIN32
-	QString overrideEntry	= parser.value(overrideEntryOpt);
-	QString overrideDataDir = parser.value(overrideDataDirOpt);
-
+	QString launchId = parser.value(launchIdOpt);
 	QStringList launch_mod_argv;
 
 	for (int i = 0; i < argc; ++i)
 		launch_mod_argv.append(QString::fromLocal8Bit(argv[i]));
 
-	if (!launch.isEmpty()) {
-		Launcher launcher;
-		launcher.launch(
-			launch,
-			launchArg,
-			overrideEntry,
-			overrideDataDir,
-			launch_mod_argv);
-		exit(0); // app.exit() is so broken
+	if (!launchId.isEmpty()) {
+		LaunchInstance::launchById(launchId, launch_mod_argv);
+		return 0;
 	}
 
 #ifdef Q_OS_WIN
@@ -105,6 +73,6 @@ int main(int argc, char **argv)
 		[]() { QCoreApplication::exit(-1); },
 		Qt::QueuedConnection);
 
-	engine.load(QUrl(QStringLiteral("qrc:/VencordLauncher/Main.qml")));
+	engine.load(QUrl(QStringLiteral("qrc:/VencordLauncher/MainWindow.qml")));
 	return app.exec();
 }

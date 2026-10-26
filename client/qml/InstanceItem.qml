@@ -20,12 +20,7 @@ Item {
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/play.svg"
 			onTriggered: {
 				if (root.selectedItem) {
-					LaunchHelper.handleLaunch(
-						root.selectedItem.path,
-						SettingsHelper.settings.launchArgs,
-						SettingsHelper.settings.entryPoint,
-						SettingsHelper.settings.userData
-					)
+					root.selectedItem.launch()
 				}
 			}
 		}
@@ -35,7 +30,21 @@ Item {
 			icon.name: "edit-paste"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
 			onTriggered: {
-				root.editRequested()
+				if (root.selectedItem) {
+					root.openEditWindow()
+				}
+			}
+		}
+
+		MenuItem {
+			text: qsTr("Delete")
+			icon.name: "edit-paste"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+			onTriggered: {
+				if (root.selectedItem) {
+					root.selectedItem.removeInstance()
+					root.refreshInstances()
+				}
 			}
 		}
 
@@ -43,9 +52,11 @@ Item {
 			text: qsTr("Create Shortcut")
 			icon.name: "edit-paste"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
-            onTriggered: {
-                Launcher.createShortcut(modelData.id, modelData.branch)
-            }
+			onTriggered: {
+				if (root.selectedItem) {
+					root.selectedItem.createShortcut()
+				}
+			}
 		}
 	}
 
@@ -66,7 +77,7 @@ Item {
 
 		onDoubleClicked: {
 			root.selectedItem = modelData
-			LaunchHelper.handleLaunch(modelData.path)
+			modelData.launch()
 		}
 	}
 
@@ -91,14 +102,7 @@ Item {
 				width: 38
 				height: 38
 				sourceSize: Qt.size(38, 38)
-				source: {
-					const branch = modelData.branch.toLowerCase()
-					if (branch.includes("canary"))
-						return "qrc:/VencordLauncher/resources/canary.svg"
-					if (branch.includes("development") || branch.includes("ptb"))
-						return "qrc:/VencordLauncher/resources/development.svg"
-					return "qrc:/VencordLauncher/resources/stable.svg"
-				}
+				source: "qrc:/VencordLauncher/resources/icon.png"
 				fillMode: Image.PreserveAspectFit
 			}
 		}
@@ -118,7 +122,7 @@ Item {
 				anchors.centerIn: parent
 				width: parent.width - 6
 				horizontalAlignment: Text.AlignHCenter
-				text: modelData.branch
+				text: modelData.name
 				font.pixelSize: 13
 				color: isSelected ? sysPalette.highlightedText : sysPalette.text
 				elide: Text.ElideRight

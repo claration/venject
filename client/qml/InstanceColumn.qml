@@ -19,7 +19,7 @@ Column {
 			spacing: 10
 
 			Label {
-				text: (modelData.collapsed ? "▶ " : "▼ ") + modelData.name
+				text: modelData.name
 				font.bold: true
 				font.pixelSize: 13
 				color: sysPalette.text
@@ -31,12 +31,6 @@ Column {
 				color: sysPalette.button
 			}
 		}
-
-		MouseArea {
-			anchors.fill: parent
-			cursorShape: Qt.PointingHandCursor
-			onClicked: modelData.toggle()
-		}
 	}
 
 	Flow {
@@ -46,8 +40,8 @@ Column {
 
 		Repeater {
 			model: modelData.items
-			delegate: DiscordItem {
-				isSelected: root.selectedItem && root.selectedItem.path === modelData.path
+			delegate: InstanceItem {
+				isSelected: root.selectedItem !== null && root.selectedItem.id === modelData.id
 			}
 		}
 	}

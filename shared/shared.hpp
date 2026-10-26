@@ -8,9 +8,10 @@ namespace fs = std::filesystem;
 
 namespace shared
 {
-fs::path OurHomePath();
-fs::path OurConfigPath();
+// fs::path OurHomePath();
+// fs::path OurConfigPath();
 fs::path OurExecutablePath();
-fs::path ModDistPath();
+// fs::path ModDistPath();
 fs::path ModEntrypointPath();
+fs::path OurHookLibraryPath();
 } // namespace shared

@@ -15,30 +15,6 @@ namespace fs = std::filesystem;
 namespace shared
 {
 
-fs::path OurHomePath()
-{
-#ifdef _WIN32
-	const char *localAppDataEnv = std::getenv("LOCALAPPDATA");
-	fs::path	home			= localAppDataEnv ? localAppDataEnv : "";
-#else
-	const char *homeEnv = std::getenv("HOME");
-	fs::path	home	= homeEnv ? homeEnv : "";
-#endif
-	return home;
-}
-
-fs::path OurConfigPath()
-{
-#ifdef _WIN32
-	const char *localAppDataEnv = std::getenv("APPDATA");
-	fs::path	home			= localAppDataEnv ? localAppDataEnv : "";
-#else
-	auto	 xdg  = std::getenv("XDG_CONFIG_HOME");
-	fs::path home = xdg ? xdg : OurHomePath() / ".config";
-#endif
-	return home;
-}
-
 fs::path OurExecutablePath()
 {
 #ifdef _WIN32
@@ -73,29 +49,41 @@ fs::path OurExecutablePath()
 #endif
 }
 
-fs::path ModDistPath()
+// fs::path ModDistPath()
+// {
+// #ifdef _WIN32
+// 	fs::path path = OurHomePath();
+// #else  // _WIN32
+// 	fs::path path = OurConfigPath();
+// #endif // _WIN32
+
+// 	path /= MOD_NAME;
+// 	path /= "dist";
+
+// 	fs::create_directories(path);
+
+// 	auto package_json = path / "package.json";
+// 	if (!fs::exists(package_json))
+// 		std::ofstream(package_json) << "{}";
+
+// 	return path;
+// }
+
+// fs::path ModEntrypointPath()
+// {
+// 	return ModDistPath() / "patcher.js";
+// }
+
+fs::path OurHookLibraryPath()
 {
 #ifdef _WIN32
-	fs::path path = OurHomePath();
-#else  // _WIN32
-	fs::path path = OurConfigPath();
-#endif // _WIN32
-
-	path /= MOD_NAME;
-	path /= "dist";
-
-	fs::create_directories(path);
-
-	auto package_json = path / "package.json";
-	if (!fs::exists(package_json))
-		std::ofstream(package_json) << "{}";
-
-	return path;
+	return OurExecutablePath().parent_path() / "libvencord_hook.dll";
+#elif __APPLE__
+	return OurExecutablePath().parent_path() / "libvencord_hook.dylib";
+#else
+	return OurExecutablePath().parent_path() / "libvencord_hook.so";
+#endif
 }
 
-fs::path ModEntrypointPath()
-{
-	return ModDistPath() / "patcher.js";
-}
 
 } // namespace shared
