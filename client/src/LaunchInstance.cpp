@@ -413,7 +413,7 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	process.setStandardErrorFile(instance->logPath(), QIODevice::Append);
 	process.startDetached();
 	return;
-#elif Q_OS_WIN32
+#elif defined(Q_OS_WIN32)
 	std::vector<wchar_t> environmentBlock;
 
 	for (const auto &key : env.keys()) {
@@ -430,9 +430,9 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 
 	environmentBlock.push_back(L'\0');
 
-	std::wstring commandLine = L"\"" + path.toStdWString() + L"\"";
-	if (!args.isEmpty()) {
-		commandLine += L" " + args.toStdWString();
+	std::wstring commandLine = L"\"" + discordInstall->exe().toStdWString() + L"\"";
+	if (!instance->launchArguments().isEmpty()) {
+		commandLine += L" " + instance->launchArguments().toStdWString();
 	}
 
 	std::vector<wchar_t> mutableCommandLine(
@@ -467,7 +467,7 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 
 	PROCESS_INFORMATION processInfo{};
 
-	const std::wstring executablePath = discordInstall->exe();
+	const std::wstring executablePath = discordInstall->exe().toStdWString();
 	const std::string  dllPath		  = shared::OurHookLibraryPath().string();
 
 	if (!DetourCreateProcessWithDllExW(

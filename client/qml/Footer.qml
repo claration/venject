@@ -33,7 +33,11 @@ Item {
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
-					Qt.openUrlExternally("file://" + selectedItem.folderPath)
+					if (Qt.platform.os == "windows") {
+						Qt.openUrlExternally("file:///" + selectedItem.folderPath)
+					} else {
+						Qt.openUrlExternally("file://" + selectedItem.folderPath)
+					}
 				}
 			}
 		}
