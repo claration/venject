@@ -52,11 +52,7 @@ QString LaunchInstance::folderPath() const
 	if (_id.isEmpty()) return QString();
 
 	QString path = QDir(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation)).filePath(_id);
-
-	QDir dir(path);
-	if (!dir.exists()) {
-		dir.mkpath(".");
-	}
+	QDir().mkpath(path);
 
 	return path;
 }
@@ -153,6 +149,48 @@ void LaunchInstance::setEnableLoggingWrap(bool wrap)
 	emit enableLoggingWrapChanged();
 }
 
+QString LaunchInstance::updaterGithubUrl() const
+{
+	return _updaterGithubUrl;
+}
+
+void LaunchInstance::setUpdaterGithubUrl(const QString &url)
+{
+	if (_updaterGithubUrl == url) return;
+	_updaterGithubUrl = url;
+
+	emit updaterGithubUrlChanged();
+}
+
+QString LaunchInstance::updaterFiles() const
+{
+	return _updaterFiles;
+}
+
+void LaunchInstance::setUpdaterFiles(const QString &files)
+{
+	if (_updaterFiles == files) return;
+	_updaterFiles = files;
+
+	emit updaterFilesChanged();
+}
+
+QString LaunchInstance::updaterFileOutputPath() const
+{
+	return _updaterFileOutputPath;
+}
+
+#include <QDir>
+
+void LaunchInstance::setUpdaterFileOutputPath(const QString &path)
+{
+    if (_updaterFileOutputPath == path) return;
+    if (!QDir().mkpath(path)) return;
+
+    _updaterFileOutputPath = path;
+    emit updaterFileOutputPathChanged();
+}
+
 #include "../../shared/shared.hpp" // OurExecutablePath
 
 bool LaunchInstance::launch() const
@@ -195,6 +233,9 @@ bool LaunchInstance::saveInstance() const
 	settings.setValue("notes", _notes);
 	settings.setValue("entryPointPath", _entryPointPath);
 	settings.setValue("environmentVariables", _environmentVariables);
+	settings.setValue("updaterGithubUrl", _updaterGithubUrl);
+	settings.setValue("updaterFiles", _updaterFiles);
+	settings.setValue("updaterFileOutputPath", _updaterFileOutputPath);
 
 	settings.endGroup();
 	settings.endGroup();
@@ -233,23 +274,28 @@ QList<LaunchInstance*> LaunchInstance::getInstances()
 	for (const QString &id : ids) {
 		settings.beginGroup(id);
 
-		QString name      = settings.value("name").toString();
+		QString name = settings.value("name").toString();
 		QString groupName = settings.value("groupName").toString();
 		QString discordId = settings.value("discordUniqueIdentifier").toString();
-		QString notes     = settings.value("notes").toString();
-		QString pathStr   = settings.value("entryPointPath").toString();
-		QVariantMap env   = settings.value("environmentVariables").toMap();
+		QString notes = settings.value("notes").toString();
+		QString pathStr = settings.value("entryPointPath").toString();
+		QVariantMap env = settings.value("environmentVariables").toMap();
+		QString updaterGithubUrl = settings.value("updaterGithubUrl").toString();
+		QString updaterFiles = settings.value("updaterFiles").toString();
+		QString updaterFileOutputPath = settings.value("updaterFileOutputPath").toString();
 
 		auto *instance = new LaunchInstance(nullptr, id, discordId);
 		instance->setName(name);
 		instance->setGroupName(groupName);
 		instance->setNotes(notes);
 
-		if (!pathStr.isEmpty()) {
+		if (!pathStr.isEmpty())
 			instance->setEntryPointPath(pathStr);
-		}
 
 		instance->setEnvironmentVariables(env);
+		instance->setUpdaterGithubUrl(updaterGithubUrl);
+		instance->setUpdaterFiles(updaterFiles);
+		instance->setUpdaterFileOutputPath(updaterFileOutputPath);
 
 		result.append(instance);
 		settings.endGroup();
@@ -261,7 +307,8 @@ QList<LaunchInstance*> LaunchInstance::getInstances()
 
 LaunchInstance* LaunchInstance::getInstanceById(const QString &id)
 {
-	if (id.isEmpty()) return nullptr;
+	if (id.isEmpty())
+		return nullptr;
 
 	QSettings settings;
 	settings.beginGroup("Instances");
@@ -272,25 +319,33 @@ LaunchInstance* LaunchInstance::getInstanceById(const QString &id)
 	}
 
 	settings.beginGroup(id);
-	QString name      = settings.value("name").toString();
+
+	QString name = settings.value("name").toString();
 	QString groupName = settings.value("groupName").toString();
 	QString discordId = settings.value("discordUniqueIdentifier").toString();
-	QString notes     = settings.value("notes").toString();
-	QString pathStr   = settings.value("entryPointPath").toString();
-	QVariantMap env   = settings.value("environmentVariables").toMap();
-	settings.endGroup(); // id
-	settings.endGroup(); // Instances
+	QString notes = settings.value("notes").toString();
+	QString pathStr = settings.value("entryPointPath").toString();
+	QVariantMap env = settings.value("environmentVariables").toMap();
+
+	QString updaterGithubUrl = settings.value("updaterGithubUrl").toString();
+	QString updaterFiles = settings.value("updaterFiles").toString();
+	QString updaterFileOutputPath = settings.value("updaterFileOutputPath").toString();
+
+	settings.endGroup();
+	settings.endGroup();
 
 	auto *instance = new LaunchInstance(nullptr, id, discordId);
 	instance->setName(name);
 	instance->setGroupName(groupName);
 	instance->setNotes(notes);
 
-	if (!pathStr.isEmpty()) {
+	if (!pathStr.isEmpty())
 		instance->setEntryPointPath(pathStr);
-	}
 
 	instance->setEnvironmentVariables(env);
+	instance->setUpdaterGithubUrl(updaterGithubUrl);
+	instance->setUpdaterFiles(updaterFiles);
+	instance->setUpdaterFileOutputPath(updaterFileOutputPath);
 
 	return instance;
 }
@@ -309,25 +364,27 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	DiscordInstall *discordInstall = DiscordInstall::getInstanceByUniqueIdentifier(instance->discordUniqueIdentifier());
 	if (!discordInstall) return;
 
-	QString _outPath = QDir(instance->folderPath()).filePath("dist");
-	QString _githubApiUrl = "https://api.github.com/repos/Vendicated/Vencord/releases/latest";
-	QStringList _filesToDownload = {
-		"patcher.js",
-		"preload.js",
-		"renderer.js",
-		"renderer.css"
-	};
+	// updater
+	if (!instance->updaterGithubUrl().isEmpty()) {
+		QStringList _filesToDownload = instance->updaterFiles().split(", ", Qt::SkipEmptyParts);
 
-	LaunchInstanceUpdater updater(_outPath, _githubApiUrl, _filesToDownload);
-	QEventLoop loop;
+		if (!_filesToDownload.isEmpty()) {
+			LaunchInstanceUpdater updater(
+				instance->updaterFileOutputPath(),
+				instance->updaterGithubUrl(),
+				_filesToDownload
+			);
+			QEventLoop loop;
 
-	QObject::connect(&updater, &LaunchInstanceUpdater::updateFinished, &loop, [&loop](bool success) {
-		Q_UNUSED(success);
-		loop.quit();
-	});
+			QObject::connect(&updater, &LaunchInstanceUpdater::updateFinished, &loop, [&loop](bool success) {
+				Q_UNUSED(success);
+				loop.quit();
+			});
 
-	updater.checkForUpdates();
-	loop.exec();
+			updater.checkForUpdates();
+			loop.exec();
+		}
+	}
 
 	QJsonArray argvJson;
 	for (const auto &arg : argv) argvJson.append(arg);

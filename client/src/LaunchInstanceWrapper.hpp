@@ -35,6 +35,11 @@ public:
 			QVariantMap env = instance->environmentVariables();
 			env.insert("VENCORD_USER_DATA_DIR", instance->folderPath());
 			instance->setEnvironmentVariables(env);
+
+			QString updaterPath = QDir(instance->folderPath()).filePath("dist");
+			instance->setUpdaterFileOutputPath(updaterPath);
+			instance->setUpdaterGithubUrl("https://api.github.com/repos/Vendicated/Vencord/releases/latest");
+			instance->setUpdaterFiles("patcher.js, preload.js, renderer.js, renderer.css");
 		}
 
 		instance->saveInstance();

@@ -25,6 +25,12 @@ class LaunchInstance : public QObject
 	Q_PROPERTY(QVariantMap environmentVariables READ environmentVariables WRITE setEnvironmentVariables NOTIFY environmentVariablesChanged)
 	Q_PROPERTY(bool enableLogging READ enableLogging WRITE setEnableLogging NOTIFY enableLoggingChanged)
     Q_PROPERTY(bool enableLoggingWrap READ enableLoggingWrap WRITE setEnableLoggingWrap NOTIFY enableLoggingWrapChanged)
+
+	Q_PROPERTY(QString updaterGithubUrl READ updaterGithubUrl WRITE setUpdaterGithubUrl NOTIFY updaterGithubUrlChanged)
+	Q_PROPERTY(QString updaterFiles READ updaterFiles WRITE setUpdaterFiles NOTIFY updaterFilesChanged)
+	Q_PROPERTY(QString updaterFileOutputPath READ updaterFileOutputPath WRITE setUpdaterFileOutputPath NOTIFY updaterFileOutputPathChanged)
+
+
 	QML_ELEMENT
 	QML_UNCREATABLE("LaunchInstance instances cannot be created directly in QML")
 
@@ -38,6 +44,9 @@ class LaunchInstance : public QObject
 	QVariantMap _environmentVariables;
 	bool        _enableLogging = true;
 	bool        _enableLoggingWrap = false;
+	QString     _updaterGithubUrl;
+	QString     _updaterFiles;
+	QString     _updaterFileOutputPath;
 
 public:
 	explicit LaunchInstance(
@@ -76,6 +85,15 @@ public:
 	[[nodiscard]] bool enableLoggingWrap() const;
 	void setEnableLoggingWrap(bool wrap);
 
+	[[nodiscard]] QString updaterGithubUrl() const;
+	void setUpdaterGithubUrl(const QString &url);
+
+	[[nodiscard]] QString updaterFiles() const;
+	void setUpdaterFiles(const QString &files);
+
+	[[nodiscard]] QString updaterFileOutputPath() const;
+	void setUpdaterFileOutputPath(const QString &path);
+
 	Q_INVOKABLE bool launch() const;
 	Q_INVOKABLE bool createShortcut() const;
 	Q_INVOKABLE bool saveInstance() const;
@@ -94,4 +112,7 @@ signals:
 	void environmentVariablesChanged();
 	void enableLoggingChanged();
 	void enableLoggingWrapChanged();
+	void updaterGithubUrlChanged();
+	void updaterFilesChanged();
+	void updaterFileOutputPathChanged();
 };
