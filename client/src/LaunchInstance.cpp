@@ -491,9 +491,5 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	CloseHandle(hLogFile);
 	CloseHandle(processInfo.hThread);
 	CloseHandle(processInfo.hProcess);
-	return;
 #endif // Q_OS_LINUX
-
-
-
 }

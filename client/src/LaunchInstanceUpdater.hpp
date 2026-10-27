@@ -25,7 +25,7 @@ private slots:
 	void handleFileDownloadReply();
 
 private:
-	QString getLocalVersion() const;
+	[[nodiscard]] QString getLocalVersion() const;
 	void saveLocalVersion(const QString &version);
 	void startNextDownload();
 

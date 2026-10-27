@@ -1,4 +1,5 @@
 #include "LaunchInstanceUpdater.hpp"
+
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
