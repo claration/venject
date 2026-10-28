@@ -103,6 +103,7 @@ qt_add_translations(${PROJECT_NAME}
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	VERSION="${VERSION}"
+	CLIENT=1
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

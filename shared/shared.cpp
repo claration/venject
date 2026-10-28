@@ -37,7 +37,7 @@ fs::path OurExecutablePath()
 		path.resize(path.size() * 2);
 	}
 #else
-#if __linux__
+#ifdef CLIENT
 	if (const char* appImageEnv = std::getenv("APPIMAGE")) {
 		if (appImageEnv[0] != '\0') {
 			return fs::path(appImageEnv);
@@ -63,11 +63,13 @@ fs::path OurHookLibraryPath()
 #elif __APPLE__
 	return OurExecutablePath().parent_path() / "libvencord_hook.dylib";
 #else
+#ifdef CLIENT
 	if (const char* appDirEnv = std::getenv("APPDIR")) {
 		if (appDirEnv[0] != '\0') {
 			return fs::path(appDirEnv) / "bin/libvencord_hook.so";
 		}
 	}
+#endif
 	return OurExecutablePath().parent_path() / "libvencord_hook.so";
 #endif
 }
