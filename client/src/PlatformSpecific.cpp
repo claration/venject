@@ -39,7 +39,7 @@ bool createShortcut(
 	out << "[Desktop Entry]\n"
 		<< "Type=Application\n"
 		<< "Name=" << name << "\n"
-		<< "Exec=" << "__VENCORDLAUNCHER_MODE_CLI=1 " << targetExecutablePath << (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
+		<< "Exec=" << "env __VENCORDLAUNCHER_MODE_CLI=1 " << targetExecutablePath << (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
 
 	if (!iconPath.isEmpty()) out << "Icon=" << iconPath << "\n";
 
