@@ -37,6 +37,13 @@ fs::path OurExecutablePath()
 		path.resize(path.size() * 2);
 	}
 #else
+#if __linux__
+	if (const char* appImageEnv = std::getenv("APPIMAGE")) {
+		if (appImageEnv[0] != '\0') {
+			return fs::path(appImageEnv);
+		}
+	}
+#endif
 	char buffer[PATH_MAX];
 
 	const auto len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
@@ -48,31 +55,6 @@ fs::path OurExecutablePath()
 	return fs::path(buffer);
 #endif
 }
-
-// fs::path ModDistPath()
-// {
-// #ifdef _WIN32
-// 	fs::path path = OurHomePath();
-// #else  // _WIN32
-// 	fs::path path = OurConfigPath();
-// #endif // _WIN32
-
-// 	path /= MOD_NAME;
-// 	path /= "dist";
-
-// 	fs::create_directories(path);
-
-// 	auto package_json = path / "package.json";
-// 	if (!fs::exists(package_json))
-// 		std::ofstream(package_json) << "{}";
-
-// 	return path;
-// }
-
-// fs::path ModEntrypointPath()
-// {
-// 	return ModDistPath() / "patcher.js";
-// }
 
 fs::path OurHookLibraryPath()
 {
