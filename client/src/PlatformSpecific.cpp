@@ -39,7 +39,8 @@ bool createShortcut(
 	out << "[Desktop Entry]\n"
 		<< "Type=Application\n"
 		<< "Name=" << name << "\n"
-		<< "Exec=" << "env __VENCORDLAUNCHER_MODE_CLI=1 " << targetExecutablePath << (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
+		<< "Exec=" << "env __VENCORDLAUNCHER_MODE_CLI=1 \"" << targetExecutablePath << "\""
+		<< (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
 
 	if (!iconPath.isEmpty()) out << "Icon=" << iconPath << "\n";
 
@@ -82,7 +83,7 @@ bool createShortcut(
 	QString cmdArgs = QString("/c set \"__VENCORDLAUNCHER_MODE_CLI=1\" && start /b \"\" \"%1\"%2")
 					.arg(targetExecutablePath)
 					.arg(targetArguments.isEmpty() ? "" : " " + targetArguments);
-	
+
 	shellLink->SetArguments(reinterpret_cast<LPCWSTR>(cmdArgs.utf16()));
 	shellLink->SetShowCmd(SW_HIDE);
 
