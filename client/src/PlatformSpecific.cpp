@@ -39,7 +39,7 @@ bool createShortcut(
 	out << "[Desktop Entry]\n"
 		<< "Type=Application\n"
 		<< "Name=" << name << "\n"
-		<< "Exec=" << targetExecutablePath << (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
+		<< "Exec=" << "__VENCORDLAUNCHER_MODE_CLI=1 " << targetExecutablePath << (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
 
 	if (!iconPath.isEmpty()) out << "Icon=" << iconPath << "\n";
 
@@ -77,11 +77,14 @@ bool createShortcut(
 		return false;
 	}
 
-	shellLink->SetPath(reinterpret_cast<LPCWSTR>(targetExecutablePath.utf16()));
+	shellLink->SetPath(L"C:\\Windows\\System32\\cmd.exe");
 
-	if (!targetArguments.isEmpty()) {
-		shellLink->SetArguments(reinterpret_cast<LPCWSTR>(targetArguments.utf16()));
-	}
+	QString cmdArgs = QString("/c set \"__VENCORDLAUNCHER_MODE_CLI=1\" && \"%1\"%2")
+					.arg(targetExecutablePath)
+					.arg(targetArguments.isEmpty() ? "" : " " + targetArguments);
+	
+	shellLink->SetArguments(reinterpret_cast<LPCWSTR>(cmdArgs.utf16()));
+	shellLink->SetShowCmd(SW_HIDE);
 
 	if (!iconPath.isEmpty()) {
 		shellLink->SetIconLocation(reinterpret_cast<LPCWSTR>(iconPath.utf16()), 0);
