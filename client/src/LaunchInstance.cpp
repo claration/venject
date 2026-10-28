@@ -263,8 +263,10 @@ bool LaunchInstance::removeInstance() const
 		}
 	}
 
-#if defined(Q_OS_WIN32) || defined(Q_OS_LINUX)
+#ifdef Q_OS_LINUX
 	platform::deleteShortcut(_id);
+#elif defined(Q_OS_WIN32)
+	platform::deleteShortcut(_name);
 #endif
 
 	return true;

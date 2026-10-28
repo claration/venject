@@ -53,21 +53,24 @@ bool createShortcut(
 	);
 	return true;
 #elif defined(Q_OS_WIN32)
+	if (name.isEmpty() || targetExecutablePath.isEmpty()) return false;
 
 	PWSTR path = nullptr;
-
 	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
 	if (FAILED(hr)) return false;
 
-	QString fullPath = QString::fromWCharArray(path) + "\\" + "vencord-launcher-" + fileName + ".lnk";
+	QDir programsDir(QString::fromWCharArray(path));
 	CoTaskMemFree(path);
+
+	if (!programsDir.mkpath("VencordLauncher")) return false;
+
+	QString fullPath = programsDir.absoluteFilePath("VencordLauncher/Vencord Launcher - " + name + ".lnk");
 
 	hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 	const bool uninitialize = SUCCEEDED(hr);
 	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return false;
 
 	IShellLinkW *shellLink = nullptr;
-
 	hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink));
 	if (FAILED(hr)) {
 		if (uninitialize) CoUninitialize();
@@ -89,6 +92,8 @@ bool createShortcut(
 	if (SUCCEEDED(hr)) {
 		hr = persistFile->Save(fullPath.toStdWString().c_str(), TRUE);
 		persistFile->Release();
+	} else {
+		hr = E_FAIL;
 	}
 
 	shellLink->Release();
@@ -114,21 +119,16 @@ bool deleteShortcut(const QString &fileName)
 	return true;
 
 #elif defined(Q_OS_WIN32)
-	PWSTR path = nullptr;
+	if (fileName.isEmpty()) return false;
 
+	PWSTR path = nullptr;
 	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
 	if (FAILED(hr)) return false;
 
-	QString fullPath = QString::fromWCharArray(path) + "\\" + "vencord-launcher-" + fileName + ".lnk";
+	QString fullPath = QString::fromWCharArray(path) + "\\VencordLauncher\\Vencord Launcher - " + fileName + ".lnk";
 	CoTaskMemFree(path);
 
-	hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-	const bool uninitialize = SUCCEEDED(hr);
-	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return false;
-
-	QFile::remove(fullPath);
-
-	return true;
+	return QFile::remove(fullPath);
 #endif
 }
 
