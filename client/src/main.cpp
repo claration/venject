@@ -26,8 +26,7 @@ int main(int argc, char **argv)
 		qputenv("QT_QUICK_BACKEND", "software");
 	}
 
-	QApplication app(argc, argv);
-
+	QGuiApplication app(argc, argv);
 	app.setOrganizationName("VencordLauncher");
 	app.setOrganizationDomain("clarati.on");
 	app.setApplicationName("VencordLauncher");
