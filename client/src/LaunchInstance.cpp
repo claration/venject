@@ -212,10 +212,21 @@ bool LaunchInstance::launch() const
 
 bool LaunchInstance::createShortcut() const {
 #if defined(Q_OS_WIN32) || defined(Q_OS_LINUX)
+	QString exePath;
+
+#if defined(Q_OS_LINUX)
+	if (qEnvironmentVariableIsSet("APPIMAGE")) {
+		exePath = qEnvironmentVariable("APPIMAGE");
+	} else
+#endif
+	{
+		exePath = QString::fromStdString(shared::OurExecutablePath().string());
+	}
+
 	return platform::createShortcut(
 		_name,
 		_id,
-		QString::fromStdString(shared::OurExecutablePath().string()),
+		exePath,
 		QString("-i %1").arg(_id),
 		""
 	);
