@@ -75,8 +75,14 @@ qt_add_qml_module(${PROJECT_NAME}
 		src/LaunchInstanceWrapper.hpp
 
 	RESOURCES
+		resources/glyphs/add.svg
+		resources/glyphs/arrow-upload.svg
+		resources/glyphs/copy.svg
+		resources/glyphs/delete.svg
+		resources/glyphs/dismiss.svg
 		resources/glyphs/document-list.svg
 		resources/glyphs/edit.svg
+		resources/glyphs/folder-arrow-right.svg
 		resources/glyphs/folder-open.svg
 		resources/glyphs/note.svg
 		resources/glyphs/play.svg

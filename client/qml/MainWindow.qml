@@ -88,6 +88,8 @@ ApplicationWindow {
 
 			Button {
 				text: qsTr("Add Instance")
+				icon.name: "list-add"
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
 				onClicked: {
 					addWindow.show()
 				}
