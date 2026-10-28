@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	parser.addOption(launchIdOpt);
 	parser.process(*app);
 
-	QString launchId = parser.value(launchIdOpt);
+	QString		launchId = parser.value(launchIdOpt);
 	QStringList launch_mod_argv;
 
 	for (int i = 0; i < argc; ++i)

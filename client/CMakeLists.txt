@@ -24,7 +24,7 @@ find_package(Qt6 CONFIG REQUIRED COMPONENTS
 
 qt_standard_project_setup(
 	I18N_SOURCE_LANGUAGE en_US
-	I18N_TRANSLATED_LANGUAGES
+	I18N_TRANSLATED_LANGUAGES es_EC
 )
 
 qt_add_executable(${PROJECT_NAME}
@@ -95,7 +95,11 @@ qt_add_qml_module(${PROJECT_NAME}
 		resources/equicord.png
 )
 
-qt_add_translations(VencordLauncher TS_FILE_DIR i18n TS_OUTPUT_DIRECTORY i18n)
+qt_add_translations(${PROJECT_NAME}
+	TS_FILE_BASE qml
+	TS_FILE_DIR i18n
+	TS_OUTPUT_DIRECTORY i18n
+	RESOURCE_PREFIX "/${PROJECT_NAME}/i18n")
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	VERSION="${VERSION}"
