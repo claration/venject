@@ -320,7 +320,7 @@ Window {
 								}
 								Button {
 									Layout.preferredWidth: 40
-									icon.name: "application-exit"
+									icon.name: "dialog-close-symbolic"
 									icon.source: "qrc:/VencordLauncher/resources/glyphs/dismiss.svg"
 									onClicked: {
 										let arr = Array.from(editWindow.envModel)
@@ -411,7 +411,7 @@ Window {
 									}
 									Button {
 										text: qsTr("Browse")
-										icon.name: "list-add"
+										icon.name: "folder-symbolic"
 										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
 										onClicked: updaterOutputFileDialog.open()
 									}

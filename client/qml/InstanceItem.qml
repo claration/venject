@@ -38,7 +38,7 @@ Item {
 
 		MenuItem {
 			text: qsTr("Delete")
-			icon.name: "edit-paste"
+			icon.name: "delete"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.svg"
 			onTriggered: {
 				if (root.selectedItem) {
@@ -50,7 +50,7 @@ Item {
 
 		MenuItem {
 			text: qsTr("Create Shortcut")
-			icon.name: "edit-paste"
+			icon.name: "list-add"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
 			onTriggered: {
 				if (root.selectedItem) {
