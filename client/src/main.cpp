@@ -25,21 +25,24 @@ int main(int argc, char **argv)
 	if (qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND")) {
 		qputenv("QT_QUICK_BACKEND", "software");
 	}
-#ifdef Q_OS_WIN32
-	QGuiApplication app(argc, argv);
-#else
-	QApplication app(argc, argv);
-#endif
-	app.setOrganizationName("VencordLauncher");
-	app.setOrganizationDomain("clarati.on");
-	app.setApplicationName("VencordLauncher");
-	app.setApplicationDisplayName("Vencord Launcher " VERSION);
-	app.setApplicationVersion(VERSION);
+
+	// qt is fucking stupid
+	std::unique_ptr<QGuiApplication> app;
+	if (qgetenv("__VENCORDLAUNCHER_MODE_CLI").isEmpty()) {
+		app = std::make_unique<QGuiApplication>(argc, argv);
+	} else {
+		app = std::make_unique<QApplication>(argc, argv);
+	}
+	app->setOrganizationName("VencordLauncher");
+	app->setOrganizationDomain("clarati.on");
+	app->setApplicationName("VencordLauncher");
+	app->setApplicationDisplayName("Vencord Launcher " VERSION);
+	app->setApplicationVersion(VERSION);
 #ifdef Q_OS_WIN32
 	QQuickStyle::setStyle("FluentWinUI3");
-	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
+	app->setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
 #else  // Q_OS_WIN32
-	app.setWindowIcon(QIcon(":/VencordLauncher/resources/icon.png"));
+	app->setWindowIcon(QIcon(":/VencordLauncher/resources/icon.png"));
 #endif // Q_OS_WIN32
 
 	QCommandLineParser parser;
@@ -49,7 +52,7 @@ int main(int argc, char **argv)
 
 	QCommandLineOption launchIdOpt(QStringList{"i", "id"}, "Launch an existing instance", "ID");
 	parser.addOption(launchIdOpt);
-	parser.process(app);
+	parser.process(*app);
 
 	QString launchId = parser.value(launchIdOpt);
 	QStringList launch_mod_argv;
@@ -71,10 +74,10 @@ int main(int argc, char **argv)
 	QObject::connect(
 		&engine,
 		&QQmlApplicationEngine::objectCreationFailed,
-		&app,
+		app.get(),
 		[]() { QCoreApplication::exit(-1); },
 		Qt::QueuedConnection);
 
 	engine.load(QUrl(QStringLiteral("qrc:/VencordLauncher/MainWindow.qml")));
-	return app.exec();
+	return app->exec();
 }

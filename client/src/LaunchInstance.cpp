@@ -201,6 +201,7 @@ bool LaunchInstance::launch() const
 	args.append("-i");
 	args.append(_id);
 
+	process.setEnvironment(QProcess::systemEnvironment() << "__VENCORDLAUNCHER_MODE_CLI=1");
 	process.setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
 	process.setArguments(args);
 	process.startDetached();
