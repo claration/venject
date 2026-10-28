@@ -63,6 +63,11 @@ fs::path OurHookLibraryPath()
 #elif __APPLE__
 	return OurExecutablePath().parent_path() / "libvencord_hook.dylib";
 #else
+	if (const char* appDirEnv = std::getenv("APPDIR")) {
+		if (appDirEnv[0] != '\0') {
+			return fs::path(appDirEnv) / "bin/libvencord_hook.so";
+		}
+	}
 	return OurExecutablePath().parent_path() / "libvencord_hook.so";
 #endif
 }
