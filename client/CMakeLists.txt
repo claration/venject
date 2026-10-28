@@ -53,6 +53,7 @@ set(QML_FILES
 	qml/InstanceColumn.qml
 	qml/DiscordRow.qml
 	qml/Footer.qml
+	qml/ValuePrompt.qml
 )
 
 foreach (QML_FILE IN LISTS QML_FILES)

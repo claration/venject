@@ -11,6 +11,24 @@ Item {
 	required property bool isSelected
 	readonly property bool isHovered: mouseArea.containsMouse
 
+	property string activeEditType: ""
+
+	ValuePrompt {
+		id: promptDialog
+		promptTitle: cardRoot.activeEditType
+
+		onAccepted: {
+			if (!modelData) return
+
+			if (cardRoot.activeEditType === "Name") {
+				modelData.name = promptDialog.text
+			} else if (cardRoot.activeEditType === "Group") {
+				modelData.groupName = promptDialog.text
+			}
+			modelData.saveInstance()
+		}
+	}
+
 	Menu {
 		id: contextMenu
 
@@ -26,6 +44,19 @@ Item {
 		}
 
 		MenuItem {
+			text: qsTr("Create Shortcut")
+			icon.name: "list-add"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+			onTriggered: {
+				if (root.selectedItem) {
+					root.selectedItem.createShortcut()
+				}
+			}
+		}
+
+		MenuSeparator { }
+
+		MenuItem {
 			text: qsTr("Edit...")
 			icon.name: "edit-paste"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
@@ -37,6 +68,32 @@ Item {
 		}
 
 		MenuItem {
+			text: qsTr("Change name...")
+			icon.name: "edit-select-all"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+			onTriggered: {
+				root.selectedItem = modelData
+				cardRoot.activeEditType = "Name"
+				promptDialog.initialValue = modelData.name
+				promptDialog.open()
+			}
+		}
+
+		MenuItem {
+			text: qsTr("Change group...")
+			icon.name: "edit-select-all"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+			onTriggered: {
+				root.selectedItem = modelData
+				cardRoot.activeEditType = "Group"
+				promptDialog.initialValue = modelData.groupName ? modelData.groupName : ""
+				promptDialog.open()
+			}
+		}
+
+		MenuSeparator { }
+
+		MenuItem {
 			text: qsTr("Delete")
 			icon.name: "delete"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.svg"
@@ -44,17 +101,6 @@ Item {
 				if (root.selectedItem) {
 					root.selectedItem.removeInstance()
 					root.refreshInstances()
-				}
-			}
-		}
-
-		MenuItem {
-			text: qsTr("Create Shortcut")
-			icon.name: "list-add"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
-			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.createShortcut()
 				}
 			}
 		}
