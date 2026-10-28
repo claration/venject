@@ -34,6 +34,7 @@ qt_add_executable(${PROJECT_NAME}
 	src/DiscordInstall.cpp
 	src/LaunchInstance.cpp
 	src/LaunchInstanceUpdater.cpp
+	src/LaunchInstanceWrapper.cpp
 	../shared/shared.cpp
 )
 

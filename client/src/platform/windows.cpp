@@ -1,6 +1,7 @@
+#include "windows.hpp"
+
 #ifdef Q_OS_WIN32
 
-#include "windows.hpp"
 
 #include <Windows.h>
 #include <ShlObj.h>
