@@ -30,7 +30,7 @@ qt_standard_project_setup(
 qt_add_executable(${PROJECT_NAME}
 	src/main.cpp
 	# src/Launcher.cpp
-	src/platform/windows.cpp
+	src/PlatformSpecific.cpp
 	src/DiscordInstall.cpp
 	src/LaunchInstance.cpp
 	src/LaunchInstanceUpdater.cpp

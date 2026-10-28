@@ -199,7 +199,7 @@ bool LaunchInstance::launch() const
 
 	QStringList args;
 	args.append("-i");
-	args.append(id());
+	args.append(_id);
 
 	process.setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
 	process.setArguments(args);
@@ -207,15 +207,20 @@ bool LaunchInstance::launch() const
 	return true;
 }
 
-// #include "platform/linux.hpp"
-// #include "platform/windows.hpp"
+#include "PlatformSpecific.hpp"
 
 bool LaunchInstance::createShortcut() const {
-// #ifdef Q_OS_WIN32
-// 	return windows::createShortcut();
-// #elif Q_OS_LINUX
-// 	return linux::createShortcut();
-// #endif
+#ifdef Q_OS_WIN32
+	return false;
+#elif defined(Q_OS_LINUX)
+	return platform::createShortcut(
+		_name,
+		_id,
+		QString::fromStdString(shared::OurExecutablePath().string()),
+		QString("-i %1").arg(_id),
+		""
+	);
+#endif
 	return false;
 }
 
@@ -239,6 +244,12 @@ bool LaunchInstance::saveInstance() const
 
 	settings.endGroup();
 	settings.endGroup();
+
+	#ifdef Q_OS_WIN32
+		// TODO
+	#elif defined(Q_OS_LINUX)
+		platform::deleteShortcut(_id);
+	#endif
 
 	return true;
 }
