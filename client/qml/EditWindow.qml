@@ -134,7 +134,7 @@ Window {
 
 					TabButton {
 						text: modelData
-						width: Math.max(100, bar.width / 5)
+						width: Math.max(100, tabBar.width / 5)
 					}
 				}
 			}
