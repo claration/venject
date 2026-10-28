@@ -59,6 +59,18 @@ Window {
 		}
 	}
 
+	function saveEnv() {
+		if (!selectedItem) return
+		let map = {}
+		for (let i = 0; i < envModel.length; i++) {
+			if (envModel[i].key.trim() !== "") {
+				map[envModel[i].key] = envModel[i].value
+			}
+		}
+		selectedItem.environmentVariables = map
+		selectedItem.saveInstance()
+	}
+
 	Component.onCompleted: loadData()
 	onSelectedItemChanged: if (selectedItem) loadData()
 
@@ -85,121 +97,190 @@ Window {
 		onTriggered: editWindow.pollLog()
 	}
 
+
+
+
+
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0
 
-		TabBar {
-			id: tabBar
+		Rectangle {
 			Layout.fillWidth: true
-
-			TabButton { text: qsTr("Discord Log") }
-			TabButton { text: qsTr("Settings") }
-			TabButton { text: qsTr("Notes") }
+			height: 1
+			color: sysPalette.light
 		}
 
-		StackLayout {
+		ColumnLayout {
 			Layout.fillWidth: true
 			Layout.fillHeight: true
-			currentIndex: tabBar.currentIndex
+			Layout.margins: 12
+			spacing: 0
 
-			// Discord Log
-			ColumnLayout {
-				anchors.margins: 12
-				spacing: 8
+			TabBar {
+				id: tabBar
+				Layout.fillWidth: true
 
-				ScrollView {
-					Layout.fillWidth: true
-					Layout.fillHeight: true
-					TextArea {
-						id: logField
-						readOnly: true
-						selectByMouse: true
-						wrapMode: (selectedItem && selectedItem.enableLoggingWrap) ? TextEdit.Wrap : TextEdit.NoWrap
-					}
-				}
+				leftPadding: 4
 
-				RowLayout {
-					Button {
-						text: qsTr("Copy")
-						icon.name: "edit-copy"
-						icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.svg"
-						onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
-					}
-					CheckBox {
-						id: enableLogging
-						text: qsTr("Keep updating")
-						onToggled: {
-							if (selectedItem) {
-								selectedItem.enableLogging = checked
-								selectedItem.saveInstance()
-							}
-							if (checked) editWindow.pollLog()
-						}
-					}
-					CheckBox {
-						id: enableLoggingWrap
-						text: qsTr("Wrap Lines")
-						onToggled: {
-							if (selectedItem) {
-								selectedItem.enableLoggingWrap = checked
-								selectedItem.saveInstance()
-							}
-						}
+				Repeater {
+					model: [
+						qsTr("Log"),
+						qsTr("General"),
+						qsTr("Environment Variables"),
+						qsTr("Updater"),
+						qsTr("Notes")
+					]
+
+					TabButton {
+						text: modelData
+						width: Math.max(100, bar.width / 5)
 					}
 				}
 			}
 
-			// Settings
-			ScrollView {
-				id: scrollView
-				clip: true
-				Pane {
-					width: scrollView.availableWidth
-					padding: 12
-					background: null
+			Pane {
+				Layout.fillWidth: true
+				Layout.fillHeight: true
 
+				background: Rectangle {
+					color: sysPalette.window
+					border.color: sysPalette.light
+					border.width: 1.17
+					radius: 6
+				}
+
+				padding: 12
+
+				StackLayout {
+					id: stackLayout
+					anchors.fill: parent
+					currentIndex: tabBar.currentIndex
+
+					// Discord Log
 					ColumnLayout {
-						width: parent.width
-						spacing: 12
+						spacing: 8
 
-						Label { text: qsTr("Launch Arguments"); font.bold: true }
-						TextField {
-							id: launchArgsField
+						ScrollView {
 							Layout.fillWidth: true
-							placeholderText: "--disable-gpu --enable-features=UseOzonePlatform"
-							onTextEdited: {
-								if (selectedItem) {
-									selectedItem.launchArguments = text
-									selectedItem.saveInstance()
-								}
+							Layout.fillHeight: true
+							TextArea {
+								id: logField
+								readOnly: true
+								selectByMouse: true
+								wrapMode: (selectedItem && selectedItem.enableLoggingWrap) ? TextEdit.Wrap : TextEdit.NoWrap
 							}
 						}
 
-						Label { text: qsTr("Custom Entry Point (patcher.js)"); font.bold: true }
 						RowLayout {
-							Layout.fillWidth: true
-							TextField {
-								id: entryPointField
-								Layout.fillWidth: true
-								onTextEdited: {
+							Button {
+								text: qsTr("Copy")
+								icon.name: "edit-copy"
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.svg"
+								onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
+							}
+							CheckBox {
+								id: enableLogging
+								text: qsTr("Keep updating")
+								onToggled: {
 									if (selectedItem) {
-										selectedItem.entryPointPath = text
+										selectedItem.enableLogging = checked
+										selectedItem.saveInstance()
+									}
+									if (checked) editWindow.pollLog()
+								}
+							}
+							CheckBox {
+								id: enableLoggingWrap
+								text: qsTr("Wrap Lines")
+								onToggled: {
+									if (selectedItem) {
+										selectedItem.enableLoggingWrap = checked
 										selectedItem.saveInstance()
 									}
 								}
 							}
-							Button {
-								text: qsTr("Browse")
-								icon.name: "list-add"
-								icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
-								onClicked: entryPointFileDialog.open()
+						}
+					}
+
+					// General
+					ScrollView {
+						id: scrollView
+						clip: true
+
+						Pane {
+							width: scrollView.availableWidth
+							padding: 0
+							background: null
+
+							ColumnLayout {
+								width: parent.width
+								spacing: 12
+
+								Label { text: qsTr("Launch Arguments"); font.bold: true }
+								TextField {
+									id: launchArgsField
+									Layout.fillWidth: true
+									placeholderText: "--disable-gpu --enable-features=UseOzonePlatform"
+									onTextEdited: {
+										if (selectedItem) {
+											selectedItem.launchArguments = text
+											selectedItem.saveInstance()
+										}
+									}
+								}
+
+								Label { text: qsTr("Custom Entry Point (patcher.js)"); font.bold: true }
+								RowLayout {
+									Layout.fillWidth: true
+									TextField {
+										id: entryPointField
+										Layout.fillWidth: true
+										onTextEdited: {
+											if (selectedItem) {
+												selectedItem.entryPointPath = text
+												selectedItem.saveInstance()
+											}
+										}
+									}
+									Button {
+										text: qsTr("Browse")
+										icon.name: "list-add"
+										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
+										onClicked: entryPointFileDialog.open()
+									}
+								}
 							}
 						}
+					}
 
-						Label { text: qsTr("Environment Variables"); font.bold: true }
-						Repeater {
+					ColumnLayout {
+						spacing: 8
+
+						RowLayout {
+							Layout.fillWidth: true
+							spacing: 8
+							Label {
+								text: qsTr("Key")
+								font.bold: true
+								Layout.preferredWidth: 160
+							}
+							Label {
+								text: qsTr("Value")
+								font.bold: true
+								Layout.fillWidth: true
+							}
+							Item { Layout.preferredWidth: 40 }
+						}
+
+						ListView {
+							id: envTableView
+							Layout.fillWidth: true
+							Layout.fillHeight: true
+							clip: true
 							model: editWindow.envModel
+							spacing: 4
+
 							delegate: RowLayout {
 								required property var modelData
 								required property int index
@@ -207,7 +288,7 @@ Window {
 								spacing: 8
 
 								TextField {
-									Layout.preferredWidth: 140
+									Layout.preferredWidth: 160
 									placeholderText: "KEY"
 									text: modelData.key
 									onTextEdited: {
@@ -225,6 +306,7 @@ Window {
 									}
 								}
 								Button {
+									Layout.preferredWidth: 40
 									icon.name: "application-exit"
 									icon.source: "qrc:/VencordLauncher/resources/glyphs/dismiss.svg"
 									onClicked: {
@@ -238,32 +320,45 @@ Window {
 						}
 
 						Button {
-							text: qsTr("Add Environment Variable")
+							text: qsTr("Add")
+							icon.name: "list-add"
 							onClicked: {
 								let arr = Array.from(editWindow.envModel)
 								arr.push({ key: "", value: "" })
 								editWindow.envModel = arr
 							}
 						}
-					}
-				}
-			}
 
-			// Notes
-			ColumnLayout {
-				anchors.margins: 12
-				spacing: 8
-				TextArea {
-					id: notesField
-					Layout.fillWidth: true
-					Layout.fillHeight: true
-					placeholderText: qsTr("Enter notes here...")
-					wrapMode: TextEdit.Wrap
-					selectByMouse: true
-					onTextChanged: {
-						if (activeFocus && selectedItem) {
-							selectedItem.notes = text
-							selectedItem.saveInstance()
+						Button {
+							text: qsTr("Clear")
+							onClicked: {
+								editWindow.envModel = []
+								saveEnv()
+							}
+						}
+					}
+
+					// Updater
+					ColumnLayout {
+						spacing: 8
+					}
+
+					// Notes
+					ColumnLayout {
+						spacing: 8
+						TextArea {
+							id: notesField
+							Layout.fillWidth: true
+							Layout.fillHeight: true
+							placeholderText: qsTr("Enter notes here...")
+							wrapMode: TextEdit.Wrap
+							selectByMouse: true
+							onTextChanged: {
+								if (activeFocus && selectedItem) {
+									selectedItem.notes = text
+									selectedItem.saveInstance()
+								}
+							}
 						}
 					}
 				}
@@ -272,7 +367,7 @@ Window {
 
 		Rectangle {
 			Layout.fillWidth: true
-			Layout.preferredHeight: 1
+			height: 1
 			color: sysPalette.light
 		}
 
@@ -290,15 +385,12 @@ Window {
 		}
 	}
 
-	function saveEnv() {
-		if (!selectedItem) return
-		let map = {}
-		for (let i = 0; i < envModel.length; i++) {
-			if (envModel[i].key.trim() !== "") {
-				map[envModel[i].key] = envModel[i].value
-			}
-		}
-		selectedItem.environmentVariables = map
-		selectedItem.saveInstance()
-	}
+
+
+
+
+
+
+
+
 }

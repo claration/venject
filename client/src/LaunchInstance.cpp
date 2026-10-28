@@ -402,7 +402,9 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	}
 
 #ifdef Q_OS_LINUX
-	env.insert("LD_PRELOAD", QString::fromStdString(shared::OurHookLibraryPath().string()));
+	if (!instance->entryPointPath().isEmpty()) {
+		env.insert("LD_PRELOAD", QString::fromStdString(shared::OurHookLibraryPath().string()));
+	}
 
 	QProcess process;
 	process.setProcessEnvironment(env);
