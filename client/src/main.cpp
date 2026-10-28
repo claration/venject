@@ -25,8 +25,11 @@ int main(int argc, char **argv)
 	if (qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND")) {
 		qputenv("QT_QUICK_BACKEND", "software");
 	}
-
+#ifdef Q_OS_WIN32
 	QGuiApplication app(argc, argv);
+#else
+	QApplication app(argc, argv);
+#endif
 	app.setOrganizationName("VencordLauncher");
 	app.setOrganizationDomain("clarati.on");
 	app.setApplicationName("VencordLauncher");

@@ -86,6 +86,7 @@ qt_add_qml_module(${PROJECT_NAME}
 		resources/development.svg
 		resources/icon.ico
 		resources/icon.png
+		resources/equicord.png
 )
 
 qt_add_translations(VencordLauncher TS_FILE_DIR i18n TS_OUTPUT_DIRECTORY i18n)

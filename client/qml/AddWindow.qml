@@ -169,6 +169,15 @@ Window {
 						sysPalette: sysPalette
 						onClicked: addWindow.selectedPreset = "vencord"
 					}
+
+					PresetRow {
+						presetId: "equicord"
+						title: qsTr("Equicord")
+						iconSource: "qrc:/VencordLauncher/resources/equicord.png"
+						isSelected: addWindow.selectedPreset === "equicord"
+						sysPalette: sysPalette
+						onClicked: addWindow.selectedPreset = "equicord"
+					}
 				}
 			}
 

@@ -25,6 +25,18 @@ LaunchInstance *LaunchInstanceWrapper::createInstance(const QString &name, const
 		instance->setUpdaterFileOutputPath(updaterPath);
 		instance->setUpdaterGithubUrl("https://api.github.com/repos/Vendicated/Vencord/releases/latest");
 		instance->setUpdaterFiles("patcher.js, preload.js, renderer.js, renderer.css");
+	} else if (preset == "equicord") {
+		QString patcherPath = QDir(instance->folderPath()).filePath("dist/patcher.js");
+		instance->setEntryPointPath(patcherPath);
+
+		QVariantMap env = instance->environmentVariables();
+		env.insert("EQUICORD_USER_DATA_DIR", instance->folderPath());
+		instance->setEnvironmentVariables(env);
+
+		QString updaterPath = QDir(instance->folderPath()).filePath("dist");
+		instance->setUpdaterFileOutputPath(updaterPath);
+		instance->setUpdaterGithubUrl("https://api.github.com/repos/Equicord/Equicord/releases/latest");
+		instance->setUpdaterFiles("patcher.js, preload.js, renderer.js, renderer.css");
 	}
 
 	instance->saveInstance();
