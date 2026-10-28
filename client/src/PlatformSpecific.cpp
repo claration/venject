@@ -79,7 +79,7 @@ bool createShortcut(
 
 	shellLink->SetPath(L"C:\\Windows\\System32\\cmd.exe");
 
-	QString cmdArgs = QString("/c set \"__VENCORDLAUNCHER_MODE_CLI=1\" && \"%1\"%2")
+	QString cmdArgs = QString("/c set \"__VENCORDLAUNCHER_MODE_CLI=1\" && start /b \"\" \"%1\"%2")
 					.arg(targetExecutablePath)
 					.arg(targetArguments.isEmpty() ? "" : " " + targetArguments);
 	
