@@ -33,6 +33,9 @@ Window {
 		notesField.text = selectedItem.notes || ""
 		enableLogging.checked = selectedItem.enableLogging || false
 		enableLoggingWrap.checked = selectedItem.enableLoggingWrap || false
+		updaterGithubUrlField.text = selectedItem.updaterGithubUrl || ""
+		updaterFilesField.text = selectedItem.updaterFiles || ""
+		updaterOutputPathField.text = selectedItem.updaterFileOutputPath || ""
 
 		let envs = selectedItem.environmentVariables || {}
 		let arr = []
@@ -161,6 +164,8 @@ Window {
 					ColumnLayout {
 						spacing: 8
 
+						Label { text: qsTr("Log"); font.pixelSize: 24; font.bold: true }
+
 						ScrollView {
 							Layout.fillWidth: true
 							Layout.fillHeight: true
@@ -217,11 +222,14 @@ Window {
 								width: parent.width
 								spacing: 12
 
+								Label { text: qsTr("General"); font.pixelSize: 24; font.bold: true }
+
 								Label { text: qsTr("Launch Arguments"); font.bold: true }
+								Label { text: qsTr("Users may choose to have custom launch options for Discord.") }
 								TextField {
 									id: launchArgsField
 									Layout.fillWidth: true
-									placeholderText: "--disable-gpu --enable-features=UseOzonePlatform"
+									placeholderText: "--start-minimized --enable-blink-features=MiddleClickAutoscroll"
 									onTextEdited: {
 										if (selectedItem) {
 											selectedItem.launchArguments = text
@@ -230,7 +238,8 @@ Window {
 									}
 								}
 
-								Label { text: qsTr("Custom Entry Point (patcher.js)"); font.bold: true }
+								Label { text: qsTr("Custom Mod Entry Point"); font.bold: true }
+								Label { text: qsTr("This is how the mod loader is initiated, this happens before Discord actually runs.") }
 								RowLayout {
 									Layout.fillWidth: true
 									TextField {
@@ -254,9 +263,13 @@ Window {
 						}
 					}
 
+					// Environment Variables
 					ColumnLayout {
 						spacing: 8
 
+						Label { text: qsTr("Environment Variables"); font.pixelSize: 24; font.bold: true }
+
+						Label { text: qsTr("Choose what environment variables are passed through into Discord.") }
 						RowLayout {
 							Layout.fillWidth: true
 							spacing: 8
@@ -319,33 +332,100 @@ Window {
 							}
 						}
 
-						Button {
-							text: qsTr("Add")
-							icon.name: "list-add"
-							onClicked: {
-								let arr = Array.from(editWindow.envModel)
-								arr.push({ key: "", value: "" })
-								editWindow.envModel = arr
+						RowLayout {
+							Button {
+								text: qsTr("Add")
+								icon.name: "list-add"
+								onClicked: {
+									let arr = Array.from(editWindow.envModel)
+									arr.push({ key: "", value: "" })
+									editWindow.envModel = arr
+								}
 							}
-						}
 
-						Button {
-							text: qsTr("Clear")
-							onClicked: {
-								editWindow.envModel = []
-								saveEnv()
+							Button {
+								text: qsTr("Clear")
+								onClicked: {
+									editWindow.envModel = []
+									saveEnv()
+								}
 							}
 						}
 					}
 
 					// Updater
-					ColumnLayout {
-						spacing: 8
+					ScrollView {
+						id: updaterScrollView
+						clip: true
+
+						Pane {
+							width: updaterScrollView.availableWidth
+							padding: 0
+							background: null
+
+							ColumnLayout {
+								width: parent.width
+								spacing: 12
+
+								Label { text: qsTr("Updater"); font.pixelSize: 24; font.bold: true; Layout.fillWidth: true }
+
+								Label { text: qsTr("Updater GitHub URL"); font.bold: true }
+								Label { text: qsTr("NOTE: this is required to initiate the updater.") }
+								TextField {
+									id: updaterGithubUrlField
+									Layout.fillWidth: true
+									placeholderText: "https://github.com/username/repository"
+									onTextEdited: {
+										if (selectedItem) {
+											selectedItem.updaterGithubUrl = text
+											selectedItem.saveInstance()
+										}
+									}
+								}
+
+								Label { text: qsTr("Updater Files (comma-separated)"); font.bold: true }
+								TextField {
+									id: updaterFilesField
+									Layout.fillWidth: true
+									placeholderText: "file1.js, file2.json"
+									onTextEdited: {
+										if (selectedItem) {
+											selectedItem.updaterFiles = text
+											selectedItem.saveInstance()
+										}
+									}
+								}
+
+								Label { text: qsTr("Updater File Output Path"); font.bold: true }
+								RowLayout {
+									Layout.fillWidth: true
+									TextField {
+										id: updaterOutputPathField
+										Layout.fillWidth: true
+										onTextEdited: {
+											if (selectedItem) {
+												selectedItem.updaterFileOutputPath = text
+												selectedItem.saveInstance()
+											}
+										}
+									}
+									Button {
+										text: qsTr("Browse")
+										icon.name: "list-add"
+										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
+										onClicked: updaterOutputFileDialog.open()
+									}
+								}
+							}
+						}
 					}
 
 					// Notes
 					ColumnLayout {
 						spacing: 8
+
+						Label { text: qsTr("Notes"); font.pixelSize: 24; font.bold: true }
+
 						TextArea {
 							id: notesField
 							Layout.fillWidth: true
