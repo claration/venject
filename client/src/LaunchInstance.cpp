@@ -210,9 +210,7 @@ bool LaunchInstance::launch() const
 #include "PlatformSpecific.hpp"
 
 bool LaunchInstance::createShortcut() const {
-#ifdef Q_OS_WIN32
-	return false;
-#elif defined(Q_OS_LINUX)
+#if defined(Q_OS_WIN32) || defined(Q_OS_LINUX)
 	return platform::createShortcut(
 		_name,
 		_id,
@@ -245,12 +243,6 @@ bool LaunchInstance::saveInstance() const
 	settings.endGroup();
 	settings.endGroup();
 
-	#ifdef Q_OS_WIN32
-		// TODO
-	#elif defined(Q_OS_LINUX)
-		platform::deleteShortcut(_id);
-	#endif
-
 	return true;
 }
 
@@ -270,6 +262,10 @@ bool LaunchInstance::removeInstance() const
 			dir.removeRecursively();
 		}
 	}
+
+#if defined(Q_OS_WIN32) || defined(Q_OS_LINUX)
+	platform::deleteShortcut(_id);
+#endif
 
 	return true;
 }

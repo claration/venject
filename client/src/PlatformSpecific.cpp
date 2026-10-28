@@ -5,18 +5,25 @@
 #include <QFile>
 #include <QTextStream>
 
+#ifdef Q_OS_WIN32
+#include <windows.h>
+#include <shlobj.h>
+#endif
+
 namespace platform {
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) || defined(Q_OS_WIN32)
 
 bool createShortcut(
 	const QString &name,
 	const QString &fileName,
-	const QString &targetPath,
-	const QString &arguments,
+	const QString &targetExecutablePath,
+	const QString &targetArguments,
 	const QString &iconPath)
 {
-	if (fileName.isEmpty() || targetPath.isEmpty()) return false;
+
+#ifdef Q_OS_LINUX
+	if (fileName.isEmpty() || targetExecutablePath.isEmpty()) return false;
 
 	QString appsDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
 	if (appsDir.isEmpty()) return false;
@@ -32,7 +39,7 @@ bool createShortcut(
 	out << "[Desktop Entry]\n"
 		<< "Type=Application\n"
 		<< "Name=" << name << "\n"
-		<< "Exec=" << targetPath << (arguments.isEmpty() ? "" : " " + arguments) << "\n";
+		<< "Exec=" << targetExecutablePath << (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
 
 	if (!iconPath.isEmpty()) out << "Icon=" << iconPath << "\n";
 
@@ -44,12 +51,56 @@ bool createShortcut(
 		fullPath,
 		QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner | QFile::ReadUser | QFile::ExeUser
 	);
-
 	return true;
+#elif defined(Q_OS_WIN32)
+
+	PWSTR path = nullptr;
+
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
+	if (FAILED(hr)) return false;
+
+	QString fullPath = QString::fromWCharArray(path) + "\\" + "vencord-launcher-" + fileName + ".lnk";
+	CoTaskMemFree(path);
+
+	hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+	const bool uninitialize = SUCCEEDED(hr);
+	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return false;
+
+	IShellLinkW *shellLink = nullptr;
+
+	hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink));
+	if (FAILED(hr)) {
+		if (uninitialize) CoUninitialize();
+		return false;
+	}
+
+	shellLink->SetPath(reinterpret_cast<LPCWSTR>(targetExecutablePath.utf16()));
+
+	if (!targetArguments.isEmpty()) {
+		shellLink->SetArguments(reinterpret_cast<LPCWSTR>(targetArguments.utf16()));
+	}
+
+	if (!iconPath.isEmpty()) {
+		shellLink->SetIconLocation(reinterpret_cast<LPCWSTR>(iconPath.utf16()), 0);
+	}
+
+	IPersistFile *persistFile = nullptr;
+	hr = shellLink->QueryInterface(IID_PPV_ARGS(&persistFile));
+	if (SUCCEEDED(hr)) {
+		hr = persistFile->Save(fullPath.toStdWString().c_str(), TRUE);
+		persistFile->Release();
+	}
+
+	shellLink->Release();
+	if (uninitialize) CoUninitialize();
+
+	return SUCCEEDED(hr);
+#endif
 }
 
 bool deleteShortcut(const QString &fileName)
 {
+#ifdef Q_OS_LINUX
 	if (fileName.isEmpty()) return false;
 
 	QString appsDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
@@ -61,6 +112,24 @@ bool deleteShortcut(const QString &fileName)
 	if (file.exists()) return file.remove();
 
 	return true;
+
+#elif defined(Q_OS_WIN32)
+	PWSTR path = nullptr;
+
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
+	if (FAILED(hr)) return false;
+
+	QString fullPath = QString::fromWCharArray(path) + "\\" + "vencord-launcher-" + fileName + ".lnk";
+	CoTaskMemFree(path);
+
+	hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+	const bool uninitialize = SUCCEEDED(hr);
+	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return false;
+
+	QFile::remove(fullPath);
+
+	return true;
+#endif
 }
 
 #endif

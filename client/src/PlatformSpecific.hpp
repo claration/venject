@@ -2,13 +2,13 @@
 
 namespace platform {
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) || defined(Q_OS_WIN32)
 
 bool createShortcut(
 	const QString &name,
 	const QString &fileName,
-	const QString &targetPath,
-	const QString &arguments = "",
+	const QString &targetExecutablePath,
+	const QString &targetArguments = "",
 	const QString &iconPath = ""
 );
 
