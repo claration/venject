@@ -28,7 +28,7 @@ if(LINUX)
 	FetchContent_Declare(
 		Dobby
 		GIT_REPOSITORY https://github.com/jmpews/Dobby.git
-		GIT_TAG master
+		GIT_TAG 5dfc8546954ce3b3198132ab13fddb89ee92cdd7
 		PATCH_COMMAND
 			${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
 			${PATCH} --forward --ignore-whitespace -p1
@@ -91,15 +91,15 @@ endif()
 
 
 if(APPLE)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/VencordLauncher.app/Contents/MacOS"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/VencordLauncher.app/Contents/MacOS"
-    )
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/VencordLauncher.app/Contents/MacOS"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/VencordLauncher.app/Contents/MacOS"
+	)
 else()
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    )
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+	)
 endif()
 
 if(NOT APPLE)
