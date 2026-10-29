@@ -38,7 +38,7 @@ bool createShortcut(
 	QTextStream out(&file);
 	out << "[Desktop Entry]\n"
 		<< "Type=Application\n"
-		<< "Name=" << name << "\n"
+		<< "Name=" << "Vencord Launcher - " << name << "\n"
 		<< "Exec=" << "env __VENCORDLAUNCHER_MODE_CLI=1 \"" << targetExecutablePath << "\""
 		<< (targetArguments.isEmpty() ? "" : " " + targetArguments) << "\n";
 
