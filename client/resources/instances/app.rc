@@ -1,0 +1,6 @@
+#include <windows.h>
+
+MAINICON ICON "Vencord.ico"
+
+#define RT_MANIFEST 24
+1 RT_MANIFEST "VencordLauncher.exe.manifest"

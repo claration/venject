@@ -42,6 +42,39 @@ void LaunchInstance::setGroupName(const QString &groupName)
 	emit groupNameChanged();
 }
 
+QString LaunchInstance::iconPath() const
+{
+	return _iconPath;
+}
+
+void LaunchInstance::setIconPath(const QString &path)
+{
+	if (path.isEmpty()) return;
+
+	QString src = path;
+	if (src.startsWith("qrc://")) {
+		src.replace(0, 6, ":");
+	} else if (src.startsWith("qrc:/")) {
+		src.replace(0, 5, ":");
+	}
+
+	QString dest = QDir(folderPath()).filePath(QFileInfo(src).fileName());
+
+	if (QFile::exists(dest)) {
+		_iconPath = dest;
+		emit iconPathChanged();
+		return;
+	}
+
+	QFile file(src);
+	if (file.copy(dest)) {
+		QFile::setPermissions(dest, QFile::ReadOwner | QFile::WriteOwner | QFile::ReadUser | QFile::WriteUser);
+		_iconPath = dest;
+	}
+
+	emit iconPathChanged();
+}
+
 QString LaunchInstance::discordUniqueIdentifier() const
 {
 	return this->_discordUniqueIdentifier;
@@ -217,7 +250,7 @@ bool LaunchInstance::createShortcut() const {
 		_id,
 		QString::fromStdString(shared::OurExecutablePath().string()),
 		QString("-i %1").arg(_id),
-		""
+		_iconPath
 	);
 #endif
 	return false;
@@ -233,6 +266,7 @@ bool LaunchInstance::saveInstance() const
 
 	settings.setValue("name", _name);
 	settings.setValue("groupName", _groupName);
+	settings.setValue("iconPath", _iconPath);
 	settings.setValue("discordUniqueIdentifier", _discordUniqueIdentifier);
 	settings.setValue("notes", _notes);
 	settings.setValue("entryPointPath", _entryPointPath);
@@ -286,6 +320,7 @@ QList<LaunchInstance*> LaunchInstance::getInstances()
 
 		QString name = settings.value("name").toString();
 		QString groupName = settings.value("groupName").toString();
+		QString iconPath = settings.value("iconPath").toString();
 		QString discordId = settings.value("discordUniqueIdentifier").toString();
 		QString notes = settings.value("notes").toString();
 		QString pathStr = settings.value("entryPointPath").toString();
@@ -297,6 +332,8 @@ QList<LaunchInstance*> LaunchInstance::getInstances()
 		auto *instance = new LaunchInstance(nullptr, id, discordId);
 		instance->setName(name);
 		instance->setGroupName(groupName);
+		if (!iconPath.isEmpty())
+			instance->setIconPath(iconPath);
 		instance->setNotes(notes);
 
 		if (!pathStr.isEmpty())
@@ -332,6 +369,7 @@ LaunchInstance* LaunchInstance::getInstanceById(const QString &id)
 
 	QString name = settings.value("name").toString();
 	QString groupName = settings.value("groupName").toString();
+	QString iconPath = settings.value("iconPath").toString();
 	QString discordId = settings.value("discordUniqueIdentifier").toString();
 	QString notes = settings.value("notes").toString();
 	QString pathStr = settings.value("entryPointPath").toString();
@@ -347,6 +385,8 @@ LaunchInstance* LaunchInstance::getInstanceById(const QString &id)
 	auto *instance = new LaunchInstance(nullptr, id, discordId);
 	instance->setName(name);
 	instance->setGroupName(groupName);
+	if (!iconPath.isEmpty())
+		instance->setIconPath(iconPath);
 	instance->setNotes(notes);
 
 	if (!pathStr.isEmpty())
@@ -504,4 +544,20 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	CloseHandle(processInfo.hThread);
 	CloseHandle(processInfo.hProcess);
 #endif // Q_OS_LINUX
+}
+
+QString LaunchInstance::getSupportedIconTypes() {
+#if defined(Q_OS_WIN)
+    return "Icon files (*.ico)";
+#else
+    return "Image files (*.png *.jpg *.jpeg *.svg)";
+#endif
+}
+
+QString LaunchInstance::getIconType() {
+#if defined(Q_OS_WIN)
+	return "ico";
+#else
+	return "png";
+#endif
 }

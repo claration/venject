@@ -38,11 +38,10 @@ int main(int argc, char **argv)
 	app->setApplicationName("VencordLauncher");
 	app->setApplicationDisplayName("Vencord Launcher " VERSION);
 	app->setApplicationVersion(VERSION);
+	app->setWindowIcon(QIcon(":/VencordLauncher/resources/instances/Vencord." + LaunchInstance::getIconType()));
+
 #ifdef Q_OS_WIN32
 	QQuickStyle::setStyle("FluentWinUI3");
-	app->setWindowIcon(QIcon(":/VencordLauncher/resources/icon.ico"));
-#else  // Q_OS_WIN32
-	app->setWindowIcon(QIcon(":/VencordLauncher/resources/icon.png"));
 #endif // Q_OS_WIN32
 
 	QCommandLineParser parser;
@@ -62,7 +61,7 @@ int main(int argc, char **argv)
 
 #ifdef Q_OS_WIN
 	QSettings::setDefaultFormat(QSettings::IniFormat);
-#endif
+#endif // Q_OS_WIN32
 
 	if (!launchId.isEmpty()) {
 		LaunchInstance::launchById(launchId, launch_mod_argv);

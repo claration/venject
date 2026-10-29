@@ -9,9 +9,34 @@ Window {
 	property var discordList: DiscordInstallWrapper.getInstances()
 	property var selectedDiscord: null
 	property string selectedPreset: "none"
+	property bool hasCustomImage: false
+	property url manualImageSource: ""
 
-	width: 480
-	height: 440
+	property url currentImageSource: {
+		if (hasCustomImage) {
+			return manualImageSource
+		}
+
+		if (selectedPreset === "vencord") {
+			return "qrc:/VencordLauncher/resources/instances/Vencord." + LaunchInstanceWrapper.getIconType()
+		} else if (selectedPreset === "equicord") {
+			return "qrc:/VencordLauncher/resources/instances/Equicord." + LaunchInstanceWrapper.getIconType()
+		}
+
+		let iconPath = "qrc:/VencordLauncher/resources/instances/DiscordStable." + LaunchInstanceWrapper.getIconType()
+		if (selectedDiscord && selectedDiscord.branch) {
+			let branchLower = selectedDiscord.branch.toLowerCase()
+			if (branchLower.includes("canary")) {
+				iconPath = "qrc:/VencordLauncher/resources/instances/DiscordCanary." + LaunchInstanceWrapper.getIconType()
+			} else if (branchLower.includes("development")) {
+				iconPath = "qrc:/VencordLauncher/resources/instances/DiscordDevelopment." + LaunchInstanceWrapper.getIconType()
+			}
+		}
+		return iconPath
+	}
+
+	width: 520
+	height: 420
 	visible: true
 
 	title: qsTr("New Instance")
@@ -43,6 +68,15 @@ Window {
 		}
 	}
 
+	ImagePickerWindow {
+		id: imagePickerWindow
+
+		onImageSelected: (imageSource) => {
+			manualImageSource = imageSource
+			hasCustomImage = true
+		}
+	}
+
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0
@@ -59,19 +93,44 @@ Window {
 			Layout.margins: 20
 			spacing: 16
 
-			ColumnLayout {
+			RowLayout {
 				Layout.fillWidth: true
-				spacing: 6
+				spacing: 14
 
-				Label {
-					text: qsTr("Instance Details")
-					font.bold: true
-					color: sysPalette.text
+				Button {
+					Layout.preferredWidth: 75
+					Layout.preferredHeight: 75
+					Layout.alignment: Qt.AlignTop
+
+					contentItem: Item {
+						Image {
+							width: 36
+							height: 36
+							anchors.centerIn: parent
+							source: currentImageSource
+							fillMode: Image.PreserveAspectFit
+							smooth: true
+						}
+					}
+
+					MouseArea {
+						anchors.fill: parent
+						acceptedButtons: Qt.LeftButton | Qt.RightButton
+						onClicked: (mouse) => {
+							if (mouse.button === Qt.RightButton) {
+								hasCustomImage = false
+								manualImageSource = ""
+							} else {
+								imagePickerWindow.show()
+								imagePickerWindow.raise()
+							}
+						}
+					}
 				}
 
-				RowLayout {
+				ColumnLayout {
 					Layout.fillWidth: true
-					spacing: 10
+					spacing: 8
 
 					TextField {
 						id: nameField
@@ -89,100 +148,107 @@ Window {
 				}
 			}
 
-			ColumnLayout {
+			RowLayout {
 				Layout.fillWidth: true
-				spacing: 6
+				Layout.preferredHeight: 140
+				spacing: 16
 
-				Label {
-					text: qsTr("Discord Installation")
-					font.bold: true
-					color: sysPalette.text
-				}
-
-				ComboBox {
-					id: discordCombo
+				ColumnLayout {
 					Layout.fillWidth: true
-					model: addWindow.discordList
-					enabled: addWindow.discordList.length > 0
+					Layout.fillHeight: true
+					spacing: 6
 
-					currentIndex: {
-						if (!addWindow.selectedDiscord) return -1
-						return addWindow.discordList.findIndex(item => item.uniqueIdentifier === addWindow.selectedDiscord.uniqueIdentifier)
+					Label {
+						text: qsTr("Discord Installation")
+						font.bold: true
+						font.pixelSize: 16
 					}
 
-					onActivated: (index) => {
-						if (index >= 0 && index < model.length) {
-							addWindow.selectedDiscord = model[index]
-						} else {
-							addWindow.selectedDiscord = null
+					ScrollView {
+						Layout.fillWidth: true
+						Layout.fillHeight: true
+						clip: true
+
+						background: Rectangle {
+							color: sysPalette.base
+							border.color: sysPalette.light
+							border.width: 1.17
+							radius: 6
+						}
+
+						ListView {
+							id: discordListView
+							width: parent.width
+							model: addWindow.discordList
+							currentIndex: {
+								if (!addWindow.selectedDiscord) return -1
+								return addWindow.discordList.findIndex(item => item.uniqueIdentifier === addWindow.selectedDiscord.uniqueIdentifier)
+							}
+
+							delegate: ItemDelegate {
+								required property int index
+								required property var modelData
+								width: discordListView.width
+								height: 46
+
+								highlighted: addWindow.selectedDiscord && addWindow.selectedDiscord.uniqueIdentifier === modelData.uniqueIdentifier
+
+								contentItem: DiscordRow {
+									discordItem: modelData
+									textColor: sysPalette.text
+								}
+
+								background: Rectangle {
+									color: parent.highlighted
+										? sysPalette.highlight
+										: (parent.hovered ? Qt.rgba(sysPalette.highlight.r, sysPalette.highlight.g, sysPalette.highlight.b, 0.25) : "transparent")
+									radius: 4
+								}
+
+								onClicked: {
+									addWindow.selectedDiscord = modelData
+								}
+							}
 						}
 					}
 
-					contentItem: DiscordRow {
-						discordItem: addWindow.selectedDiscord
-						textColor: sysPalette.text
+				}
+
+				ColumnLayout {
+					Layout.preferredWidth: 50
+					Layout.fillHeight: true
+					spacing: 6
+
+					Label {
+						text: qsTr("Mod Loader")
+						font.bold: true
+						font.pixelSize: 16
 					}
 
-					delegate: ItemDelegate {
-						required property int index
-						required property var modelData
-						width: discordCombo.width
-						height: 32
+					ColumnLayout {
+						Layout.fillWidth: true
+						spacing: 2
 
-						contentItem: DiscordRow {
-							discordItem: modelData
-							textColor: sysPalette.text
+						Repeater {
+							model: [
+								{ id: "none", label: qsTr("None") },
+								{ id: "vencord", label: qsTr("Vencord") },
+								{ id: "equicord", label: qsTr("Equicord") }
+							]
+
+							delegate: RadioButton {
+								Layout.fillWidth: true
+								text: modelData.label
+								checked: addWindow.selectedPreset === modelData.id
+								onToggled: if (checked) addWindow.selectedPreset = modelData.id
+							}
 						}
-						highlighted: discordCombo.highlightedIndex === index
+					}
+
+					Item {
+						Layout.fillHeight: true
 					}
 				}
-			}
-
-			ColumnLayout {
-				Layout.fillWidth: true
-				spacing: 6
-
-				Label {
-					text: qsTr("Preset")
-					font.bold: true
-					color: sysPalette.text
-				}
-
-				RowLayout {
-					Layout.alignment: Qt.AlignHCenter
-					spacing: 16
-
-					PresetRow {
-						presetId: "none"
-						title: qsTr("None")
-						symbol: "∅"
-						isSelected: addWindow.selectedPreset === "none"
-						sysPalette: sysPalette
-						onClicked: addWindow.selectedPreset = "none"
-					}
-
-					PresetRow {
-						presetId: "vencord"
-						title: qsTr("Vencord")
-						iconSource: "qrc:/VencordLauncher/resources/icon.png"
-						isSelected: addWindow.selectedPreset === "vencord"
-						sysPalette: sysPalette
-						onClicked: addWindow.selectedPreset = "vencord"
-					}
-
-					PresetRow {
-						presetId: "equicord"
-						title: qsTr("Equicord")
-						iconSource: "qrc:/VencordLauncher/resources/equicord.png"
-						isSelected: addWindow.selectedPreset === "equicord"
-						sysPalette: sysPalette
-						onClicked: addWindow.selectedPreset = "equicord"
-					}
-				}
-			}
-
-			Item {
-				Layout.fillHeight: true
 			}
 		}
 
@@ -211,13 +277,15 @@ Window {
 					let groupName = groupField.text.trim()
 					let selectedDiscord = addWindow.selectedDiscord
 					let selectedPreset = addWindow.selectedPreset
+					let selectedIcon = addWindow.currentImageSource
 
-					console.log(instanceName)
-					console.log(groupName)
-					console.log(selectedDiscord.uniqueIdentifier)
-					console.log(selectedPreset)
-
-					LaunchInstanceWrapper.createInstance(instanceName, groupName, selectedDiscord.uniqueIdentifier, selectedPreset)
+					LaunchInstanceWrapper.createInstance(
+						instanceName,
+						groupName,
+						selectedIcon,
+						selectedDiscord.uniqueIdentifier,
+						selectedPreset
+					)
 
 					addWindow.close()
 				}

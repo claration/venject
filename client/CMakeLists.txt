@@ -40,7 +40,7 @@ qt_add_executable(${PROJECT_NAME}
 
 if(WIN32)
 	target_sources(${PROJECT_NAME} PRIVATE
-		resources/app.rc
+		resources/instances/app.rc
 	)
 endif()
 
@@ -54,6 +54,7 @@ set(QML_FILES
 	qml/DiscordRow.qml
 	qml/Footer.qml
 	qml/ValuePrompt.qml
+	qml/ImagePickerWindow.qml
 )
 
 foreach (QML_FILE IN LISTS QML_FILES)
@@ -62,6 +63,39 @@ foreach (QML_FILE IN LISTS QML_FILES)
 	set_source_files_properties(${QML_FILE} PROPERTIES QT_RESOURCE_ALIAS
 			"${TRANSFORMED_PATH}")
 endforeach ()
+
+if(WIN32)
+	set(RESOURCES
+		resources/instances/DiscordCanary.ico
+		resources/instances/DiscordDevelopment.ico
+		resources/instances/DiscordStable.ico
+		resources/instances/Equicord.ico
+		resources/instances/Vencord.ico
+	)
+else()
+	set(RESOURCES
+		resources/instances/DiscordCanary.png
+		resources/instances/DiscordDevelopment.png
+		resources/instances/DiscordStable.png
+		resources/instances/Equicord.png
+		resources/instances/Vencord.png
+	)
+endif()
+
+list(APPEND RESOURCES
+	resources/glyphs/add.svg
+	resources/glyphs/arrow-upload.svg
+	resources/glyphs/copy.svg
+	resources/glyphs/delete.svg
+	resources/glyphs/dismiss.svg
+	resources/glyphs/document-list.svg
+	resources/glyphs/edit.svg
+	resources/glyphs/folder-arrow-right.svg
+	resources/glyphs/folder-open.svg
+	resources/glyphs/note.svg
+	resources/glyphs/play.svg
+	resources/glyphs/settings.svg
+)
 
 qt_add_qml_module(${PROJECT_NAME}
 	URI ${PROJECT_NAME}
@@ -75,25 +109,7 @@ qt_add_qml_module(${PROJECT_NAME}
 		src/LaunchInstance.hpp
 		src/LaunchInstanceWrapper.hpp
 
-	RESOURCES
-		resources/glyphs/add.svg
-		resources/glyphs/arrow-upload.svg
-		resources/glyphs/copy.svg
-		resources/glyphs/delete.svg
-		resources/glyphs/dismiss.svg
-		resources/glyphs/document-list.svg
-		resources/glyphs/edit.svg
-		resources/glyphs/folder-arrow-right.svg
-		resources/glyphs/folder-open.svg
-		resources/glyphs/note.svg
-		resources/glyphs/play.svg
-		resources/glyphs/settings.svg
-		resources/canary.svg
-		resources/stable.svg
-		resources/development.svg
-		resources/icon.ico
-		resources/icon.png
-		resources/equicord.png
+	RESOURCES ${RESOURCES}
 )
 
 qt_add_translations(${PROJECT_NAME}
@@ -127,7 +143,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 if(APPLE)
 	set_target_properties(${PROJECT_NAME} PROPERTIES
-					MACOSX_BUNDLE TRUE
+		MACOSX_BUNDLE TRUE
 	)
 endif()
 

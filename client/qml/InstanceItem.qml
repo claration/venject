@@ -148,7 +148,7 @@ Item {
 				width: 38
 				height: 38
 				sourceSize: Qt.size(38, 38)
-				source: "qrc:/VencordLauncher/resources/icon.png"
+				source: "file:/" + modelData.iconPath
 				fillMode: Image.PreserveAspectFit
 			}
 		}

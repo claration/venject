@@ -5,13 +5,19 @@ QList<LaunchInstance *> LaunchInstanceWrapper::getInstances()
 	return LaunchInstance::getInstances();
 }
 
-LaunchInstance *LaunchInstanceWrapper::createInstance(const QString &name, const QString &groupName, const QString &discordUniqueIdentifier, const QString &preset)
+LaunchInstance *LaunchInstanceWrapper::createInstance(
+	const QString &name,
+	const QString &groupName,
+	const QString &iconPath,
+	const QString &discordUniqueIdentifier,
+	const QString &preset)
 {
 	QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
 	auto *instance = new LaunchInstance(nullptr, id, discordUniqueIdentifier);
 	instance->setName(name);
 	instance->setGroupName(groupName);
+	instance->setIconPath(iconPath);
 
 	if (preset == "vencord") {
 		QString patcherPath = QDir(instance->folderPath()).filePath("dist/patcher.js");
@@ -41,4 +47,12 @@ LaunchInstance *LaunchInstanceWrapper::createInstance(const QString &name, const
 
 	instance->saveInstance();
 	return instance;
+}
+
+QString LaunchInstanceWrapper::getSupportedIconTypes() {
+	return LaunchInstance::getSupportedIconTypes();
+}
+
+QString LaunchInstanceWrapper::getIconType() {
+	return LaunchInstance::getIconType();
 }

@@ -17,7 +17,11 @@ public:
 	Q_INVOKABLE LaunchInstance * createInstance(
 		const QString &name,
 		const QString &groupName,
+		const QString &iconPath,
 		const QString &discordUniqueIdentifier,
 		const QString &preset
 	);
+
+	Q_INVOKABLE QString getSupportedIconTypes();
+	Q_INVOKABLE QString getIconType();
 };

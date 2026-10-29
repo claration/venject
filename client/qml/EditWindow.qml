@@ -79,7 +79,7 @@ Window {
 
 	FileDialog {
 		id: entryPointFileDialog
-		title: "Choose Vencord Entrypoint"
+		title: qsTr("Choose Vencord Entrypoint")
 		fileMode: FileDialog.OpenFile
 		nameFilters: ["Patcher files (*.js)", "All files (*)"]
 		onAccepted: {

@@ -15,6 +15,7 @@ class LaunchInstance : public QObject
 	Q_PROPERTY(QString id READ id CONSTANT)
 	Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
 	Q_PROPERTY(QString groupName READ groupName WRITE setGroupName NOTIFY groupNameChanged)
+	Q_PROPERTY(QString iconPath READ iconPath WRITE setIconPath NOTIFY iconPathChanged)
 	Q_PROPERTY(QString discordUniqueIdentifier READ discordUniqueIdentifier CONSTANT)
 	Q_PROPERTY(QString folderPath READ folderPath CONSTANT)
 	Q_PROPERTY(QString logPath READ logPath CONSTANT)
@@ -37,6 +38,7 @@ class LaunchInstance : public QObject
 	QString     _id;
 	QString     _name;
 	QString     _groupName;
+	QString     _iconPath;
 	QString     _discordUniqueIdentifier;
 	QString     _notes;
 	QString     _entryPointPath;
@@ -61,6 +63,9 @@ public:
 
 	[[nodiscard]] QString groupName() const;
 	void setGroupName(const QString &groupName);
+
+	[[nodiscard]] QString iconPath() const;
+	void setIconPath(const QString &path);
 
 	[[nodiscard]] QString discordUniqueIdentifier() const;
 	[[nodiscard]] QString folderPath() const;
@@ -102,10 +107,13 @@ public:
 	Q_INVOKABLE static QList<LaunchInstance*> getInstances();
 	Q_INVOKABLE [[nodiscard]] static LaunchInstance* getInstanceById(const QString &id);
 	static void launchById(const QString &id, const QStringList &argv);
+	Q_INVOKABLE static QString getSupportedIconTypes();
+	Q_INVOKABLE static QString getIconType();
 
 signals:
 	void nameChanged();
 	void groupNameChanged();
+	void iconPathChanged();
 	void notesChanged();
 	void entryPointPathChanged();
 	void launchArgumentsChanged();

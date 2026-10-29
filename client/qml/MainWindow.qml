@@ -20,7 +20,6 @@ ApplicationWindow {
 			if (!groups[gName]) {
 				groups[gName] = {
 					name: gName,
-					collapsed: false,
 					items: []
 				}
 			}
