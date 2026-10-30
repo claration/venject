@@ -79,27 +79,94 @@ ApplicationWindow {
 			color: sysPalette.light
 		}
 
-		ScrollView {
+		Item {
 			Layout.fillWidth: true
 			Layout.fillHeight: true
-			clip: true
-			contentWidth: availableWidth
-
-			background: Rectangle {
-				color: sysPalette.base
-			}
 
 			Column {
-				width: parent.width
-				spacing: 20
-				padding: 16
+				anchors.centerIn: parent
+				spacing: 8
+				visible: root.groupedInstances.length === 0
 
-				Repeater {
-					model: root.groupedInstances
+				Label {
+					text: qsTr("No instances added")
+					font.pixelSize: 16
+					font.bold: true
+					color: sysPalette.text
+					anchors.horizontalCenter: parent.horizontalCenter
+				}
 
-					delegate: InstanceColumn {
-						isVisible: modelData.items.length > 0
-						width: parent.width
+				Label {
+					text: qsTr("Click 'Create Instance' below to get started.")
+					font.pixelSize: 12
+					color: sysPalette.placeholderText
+					anchors.horizontalCenter: parent.horizontalCenter
+				}
+			}
+
+			ScrollView {
+				anchors.fill: parent
+				clip: true
+				contentWidth: availableWidth
+				visible: root.groupedInstances.length > 0
+
+				background: Rectangle {
+					color: sysPalette.base
+				}
+
+				Column {
+					width: parent.width
+					spacing: 20
+					padding: 16
+
+					Repeater {
+						model: root.groupedInstances
+
+						delegate: InstanceColumn {
+							isVisible: modelData.items.length > 0
+							width: parent.width
+						}
+					}
+				}
+			}
+		}
+
+		Rectangle {
+			Layout.fillWidth: true
+			height: 1
+			color: sysPalette.light
+		}
+
+		ColumnLayout {
+			RowLayout {
+				Layout.margins: 12
+				spacing: 12
+
+				Button {
+					text: qsTr("Add Instance")
+					icon.name: "list-add"
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+					onClicked: {
+						addWindow.show()
+						addWindow.raise()
+					}
+				}
+
+				Button {
+					text: qsTr("Get Help")
+					icon.name: "list-add"
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+					onClicked: {
+						Qt.openUrlExternally("https://discord.gg/vencord")
+					}
+				}
+
+				Button {
+					text: qsTr("Donate")
+					icon.name: "list-add"
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+					onClicked: {
+						Qt.openUrlExternally("https://github.com/sponsors/claration")
 					}
 				}
 			}

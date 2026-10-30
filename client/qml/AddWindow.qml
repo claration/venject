@@ -8,7 +8,7 @@ Window {
 
 	property var discordList: DiscordInstallWrapper.getInstances()
 	property var selectedDiscord: null
-	property string selectedPreset: "none"
+	property string selectedPreset: "vencord"
 	property bool hasCustomImage: false
 	property url manualImageSource: ""
 
