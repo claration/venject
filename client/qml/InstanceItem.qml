@@ -8,6 +8,8 @@ Button {
 	height: 95
 
 	required property var modelData
+	property bool isLaunching: false
+	enabled: !isLaunching
 
 	contentItem: ColumnLayout {
 		anchors.fill: parent
@@ -26,6 +28,22 @@ Button {
 					sourceSize: Qt.size(38, 38)
 					source: "file:/" + modelData.iconPath
 					fillMode: Image.PreserveAspectFit
+
+					opacity: cardRoot.isLaunching ? 0 : 1
+					Behavior on opacity {
+						NumberAnimation { duration: 150 }
+					}
+				}
+
+				SpinnerIcon {
+					anchors.fill: parent
+					spinning: cardRoot.isLaunching
+					sourceImage: "qrc:/VencordLauncher/resources/glyphs/edit.png"
+
+					opacity: cardRoot.isLaunching ? 1 : 0
+					Behavior on opacity {
+						NumberAnimation { duration: 150 }
+					}
 				}
 			}
 
@@ -41,7 +59,19 @@ Button {
 		}
 	}
 
+	Connections {
+		target: modelData
+		function onLaunchFinished(exitCode, error) {
+			cardRoot.isLaunching = false
+			console.log("Launched:", modelData)
+			if (exitCode !== 0) {
+				//
+			}
+		}
+	}
+
 	onClicked: {
+		cardRoot.isLaunching = true
 		modelData.launch()
 	}
 
@@ -62,6 +92,7 @@ Button {
 			text: qsTr("Launch")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
 			onTriggered: {
+				cardRoot.isLaunching = true
 				modelData.launch()
 			}
 		}

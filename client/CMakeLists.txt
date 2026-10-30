@@ -55,6 +55,7 @@ set(QML_FILES
 	qml/Footer.qml
 	qml/ValuePrompt.qml
 	qml/ImagePickerWindow.qml
+	qml/SpinnerIcon.qml
 )
 
 foreach (QML_FILE IN LISTS QML_FILES)

@@ -57,6 +57,9 @@ void LaunchInstance::setIconPath(const QString &path)
 	} else if (src.startsWith("qrc:/")) {
 		src.replace(0, 5, ":");
 	}
+	else if (src.startsWith("file://")) {
+		src = QUrl(src).toLocalFile();
+	}
 
 	QString dest = QDir(folderPath()).filePath(QFileInfo(src).fileName());
 
@@ -226,29 +229,35 @@ void LaunchInstance::setUpdaterFileOutputPath(const QString &path)
 
 #include "../../shared/shared.hpp" // OurExecutablePath
 
-QVariantMap LaunchInstance::launch() const
+void LaunchInstance::launch()
 {
-	QVariantMap result;
-	QProcess process;
+	QProcess *process = new QProcess(this);
 
-	process.setEnvironment(QProcess::systemEnvironment() << "__VENCORDLAUNCHER_MODE_CLI=1");
-	process.setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
-	process.setArguments({"-i", _id});
+	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+		this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+			QString errorStr = "";
+			if (exitStatus == QProcess::CrashExit) {
+				exitCode = -1;
+				errorStr = process->errorString();
+			}
 
-	process.start();
+			emit launchFinished(exitCode, errorStr);
 
-	if (!process.waitForStarted() || !process.waitForFinished(-1) ||
-		process.exitStatus() == QProcess::CrashExit)
-	{
-		result["exitCode"] = -1;
-		result["error"] = process.errorString();
-		return result;
-	}
+			process->deleteLater();
+		});
 
-	result["exitCode"] = process.exitCode();
-	result["error"] = "";
+	connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
+		if (error == QProcess::FailedToStart) {
+			emit launchFinished(-1, process->errorString());
+			process->deleteLater();
+		}
+	});
 
-	return result;
+	process->setEnvironment(QProcess::systemEnvironment() << "__VENCORDLAUNCHER_MODE_CLI=1");
+	process->setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
+	process->setArguments({"-i", _id});
+
+	process->start();
 }
 
 #include "PlatformSpecific.hpp"
