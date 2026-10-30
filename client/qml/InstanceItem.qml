@@ -77,6 +77,20 @@ Button {
 		MenuSeparator { }
 
 		MenuItem {
+			text: qsTr("View Folder")
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+			onTriggered: {
+				if (Qt.platform.os == "windows") {
+					Qt.openUrlExternally("file:///" + modelData.folderPath)
+				} else {
+					Qt.openUrlExternally("file://" + modelData.folderPath)
+				}
+			}
+		}
+
+		MenuSeparator { }
+
+		MenuItem {
 			text: qsTr("Edit...")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.png"
 			onTriggered: {
