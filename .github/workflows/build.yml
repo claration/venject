@@ -82,7 +82,7 @@ jobs:
         with:
           name: launcher-windows-x86_64
           path: |
-            build/venject-windows-x86_64-setup.exe
+            build/*-setup.exe
 
   release:
     runs-on: ubuntu-latest
