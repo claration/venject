@@ -4,13 +4,14 @@ JOBS						?= 1
 BUILD_TYPE					?= Debug
 ARCH 						:= $(shell uname -m)
 
-PACKAGE_GENERATOR			?= AppImage
 ENABLE_QT_DEPLOY			?= ON
 
 ifeq ($(OS),Windows_NT)
+	PACKAGE_GENERATOR			?= NSIS
 	CMAKE_GENERATOR 		:= -G "MinGW Makefiles"
 	CPACK_PACKAGE_FILE_NAME := "VencordLauncher-windows-$(ARCH)-setup"
 else
+	PACKAGE_GENERATOR			?= AppImage
 	CMAKE_GENERATOR 		:=
 	CPACK_PACKAGE_FILE_NAME := "VencordLauncher-linux-$(ARCH)"
 endif
