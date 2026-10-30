@@ -145,7 +145,7 @@ ApplicationWindow {
 				Button {
 					text: qsTr("Add Instance")
 					icon.name: "list-add"
-					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.png"
 					onClicked: {
 						addWindow.show()
 						addWindow.raise()
@@ -155,7 +155,7 @@ ApplicationWindow {
 				Button {
 					text: qsTr("Get Help")
 					icon.name: "list-add"
-					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/help.png"
 					onClicked: {
 						Qt.openUrlExternally("https://discord.gg/vencord")
 					}
@@ -164,7 +164,7 @@ ApplicationWindow {
 				Button {
 					text: qsTr("Donate")
 					icon.name: "list-add"
-					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/donate.png"
 					onClicked: {
 						Qt.openUrlExternally("https://github.com/sponsors/claration")
 					}

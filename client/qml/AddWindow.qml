@@ -268,8 +268,6 @@ Window {
 
 			Button {
 				text: qsTr("Create")
-				icon.name: "list-add"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
 				highlighted: true
 				enabled: addWindow.selectedDiscord !== null
 				onClicked: {

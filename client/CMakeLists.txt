@@ -83,18 +83,15 @@ else()
 endif()
 
 list(APPEND RESOURCES
-	resources/glyphs/add.svg
-	resources/glyphs/arrow-upload.svg
-	resources/glyphs/copy.svg
-	resources/glyphs/delete.svg
-	resources/glyphs/dismiss.svg
-	resources/glyphs/document-list.svg
-	resources/glyphs/edit.svg
-	resources/glyphs/folder-arrow-right.svg
-	resources/glyphs/folder-open.svg
-	resources/glyphs/note.svg
-	resources/glyphs/play.svg
-	resources/glyphs/settings.svg
+	resources/glyphs/add.png
+	resources/glyphs/change.png
+	resources/glyphs/delete.png
+	resources/glyphs/donate.png
+	resources/glyphs/edit.png
+	resources/glyphs/folder.png
+	resources/glyphs/help.png
+	resources/glyphs/launch.png
+	resources/glyphs/shortcut.png
 )
 
 qt_add_qml_module(${PROJECT_NAME}

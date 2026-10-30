@@ -74,8 +74,6 @@ Window {
 		Button {
 			Layout.alignment: Qt.AlignHCenter
 			text: qsTr("Browse")
-			icon.name: "list-add"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
 			onClicked: fileDialog.open()
 		}
 	}

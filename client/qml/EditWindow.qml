@@ -185,8 +185,6 @@ Window {
 						RowLayout {
 							Button {
 								text: qsTr("Copy")
-								icon.name: "edit-copy"
-								icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.svg"
 								onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
 							}
 							CheckBox {
@@ -259,8 +257,6 @@ Window {
 									}
 									Button {
 										text: qsTr("Browse")
-										icon.name: "list-add"
-										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
 										onClicked: entryPointFileDialog.open()
 									}
 								}
@@ -325,8 +321,6 @@ Window {
 								}
 								Button {
 									Layout.preferredWidth: 40
-									icon.name: "dialog-close-symbolic"
-									icon.source: "qrc:/VencordLauncher/resources/glyphs/dismiss.svg"
 									onClicked: {
 										let arr = Array.from(editWindow.envModel)
 										arr.splice(index, 1)
@@ -416,8 +410,6 @@ Window {
 									}
 									Button {
 										text: qsTr("Browse")
-										icon.name: "folder-symbolic"
-										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
 										onClicked: updaterOutputFileDialog.open()
 									}
 								}

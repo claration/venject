@@ -29,7 +29,7 @@ Item {
 		Button {
 			text: qsTr("View Folder")
 			icon.name: "find-location"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-open.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
@@ -45,7 +45,7 @@ Item {
 		Button {
 			text: qsTr("Launch")
 			icon.name: "media-playback-start"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/play.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
