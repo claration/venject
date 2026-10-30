@@ -28,7 +28,6 @@ Item {
 
 		Button {
 			text: qsTr("View Folder")
-			icon.name: "find-location"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 			enabled: root.selectedItem !== null
 			onClicked: {
@@ -44,7 +43,6 @@ Item {
 
 		Button {
 			text: qsTr("Launch")
-			icon.name: "media-playback-start"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
 			enabled: root.selectedItem !== null
 			onClicked: {

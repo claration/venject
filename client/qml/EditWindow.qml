@@ -334,7 +334,6 @@ Window {
 						RowLayout {
 							Button {
 								text: qsTr("Add")
-								icon.name: "list-add"
 								onClicked: {
 									let arr = Array.from(editWindow.envModel)
 									arr.push({ key: "", value: "" })

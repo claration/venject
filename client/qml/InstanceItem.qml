@@ -60,7 +60,6 @@ Button {
 
 		MenuItem {
 			text: qsTr("Launch")
-			icon.name: "media-playback-start"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
 			onTriggered: {
 				modelData.launch()
@@ -69,7 +68,6 @@ Button {
 
 		MenuItem {
 			text: qsTr("Create Shortcut")
-			icon.name: "list-add"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/shortcut.png"
 			onTriggered: {
 				modelData.createShortcut()
@@ -80,7 +78,6 @@ Button {
 
 		MenuItem {
 			text: qsTr("Edit...")
-			icon.name: "edit-paste"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.png"
 			onTriggered: {
 				editWindow.openFor(modelData)
@@ -89,7 +86,6 @@ Button {
 
 		MenuItem {
 			text: qsTr("Change name...")
-			icon.name: "edit-select-all"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/change.png"
 			onTriggered: {
 				promptDialog.targetItem = modelData
@@ -101,7 +97,6 @@ Button {
 
 		MenuItem {
 			text: qsTr("Change group...")
-			icon.name: "edit-select-all"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/change.png"
 			onTriggered: {
 				promptDialog.targetItem = modelData
@@ -115,7 +110,6 @@ Button {
 
 		MenuItem {
 			text: qsTr("Delete")
-			icon.name: "delete"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.png"
 			onTriggered: {
 				modelData.removeInstance()
