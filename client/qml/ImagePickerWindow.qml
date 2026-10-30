@@ -74,6 +74,7 @@ Window {
 		Button {
 			Layout.alignment: Qt.AlignHCenter
 			text: qsTr("Browse")
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 			onClicked: fileDialog.open()
 		}
 	}

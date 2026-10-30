@@ -257,6 +257,7 @@ Window {
 									}
 									Button {
 										text: qsTr("Browse")
+										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 										onClicked: entryPointFileDialog.open()
 									}
 								}
@@ -321,6 +322,7 @@ Window {
 								}
 								Button {
 									Layout.preferredWidth: 40
+									icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.png"
 									onClicked: {
 										let arr = Array.from(editWindow.envModel)
 										arr.splice(index, 1)
@@ -334,6 +336,7 @@ Window {
 						RowLayout {
 							Button {
 								text: qsTr("Add")
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/add.png"
 								onClicked: {
 									let arr = Array.from(editWindow.envModel)
 									arr.push({ key: "", value: "" })
@@ -397,6 +400,7 @@ Window {
 								Label { text: qsTr("Updater File Output Path"); font.bold: true }
 								RowLayout {
 									Layout.fillWidth: true
+
 									TextField {
 										id: updaterOutputPathField
 										Layout.fillWidth: true
@@ -407,8 +411,10 @@ Window {
 											}
 										}
 									}
+
 									Button {
 										text: qsTr("Browse")
+										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 										onClicked: updaterOutputFileDialog.open()
 									}
 								}
