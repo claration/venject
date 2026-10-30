@@ -185,6 +185,7 @@ Window {
 						RowLayout {
 							Button {
 								text: qsTr("Copy")
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.png"
 								onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
 							}
 							CheckBox {
@@ -462,6 +463,7 @@ Window {
 
 			Button {
 				text: qsTr("Close")
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
 				onClicked: editWindow.close()
 			}
 		}

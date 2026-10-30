@@ -84,13 +84,16 @@ endif()
 
 list(APPEND RESOURCES
 	resources/glyphs/add.png
+	resources/glyphs/cancel.png
 	resources/glyphs/change.png
+	resources/glyphs/copy.png
 	resources/glyphs/delete.png
 	resources/glyphs/donate.png
 	resources/glyphs/edit.png
 	resources/glyphs/folder.png
 	resources/glyphs/help.png
 	resources/glyphs/launch.png
+	resources/glyphs/ok.png
 	resources/glyphs/shortcut.png
 )
 
