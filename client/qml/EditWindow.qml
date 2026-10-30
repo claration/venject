@@ -347,6 +347,7 @@ Window {
 
 							Button {
 								text: qsTr("Clear")
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
 								onClicked: {
 									editWindow.envModel = []
 									saveEnv()
