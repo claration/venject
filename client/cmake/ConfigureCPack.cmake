@@ -148,7 +148,9 @@ else()
 	set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
 	set(CPACK_RPM_PACKAGE_GROUP "Applications/Internet")
 	set(CPACK_RPM_PACKAGE_AUTOREQ ON)
-	set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase, qt6-qtdeclarative")
+	set(CPACK_RPM_PACKAGE_REQUIRES
+		"qt6-qtbase, qt6-qtdeclarative, qt6-qtquickcontrols2"
+	)
 endif()
 
 cmake_policy(SET CMP0153 NEW)
