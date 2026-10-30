@@ -10,7 +10,6 @@ ApplicationWindow {
 	id: root
 
 	property var instanceList: LaunchInstanceWrapper.getInstances()
-	property var selectedItem: null
 
 	property var groupedInstances: {
 		let groups = {}
@@ -47,15 +46,6 @@ ApplicationWindow {
 
 	function refreshInstances() {
 		instanceList = LaunchInstanceWrapper.getInstances()
-		if (selectedItem && !instanceList.some(item => item.id === selectedItem.id)) {
-			selectedItem = null
-		}
-		console.log(instanceList)
-	}
-
-	function openEditWindow() {
-		editWindow.show()
-		editWindow.raise()
 	}
 
 	Settings {
@@ -73,39 +63,15 @@ ApplicationWindow {
 	EditWindow {
 		id: editWindow
 		visible: false
-		selectedItem: root.selectedItem
+	}
+
+	ValuePrompt {
+		id: promptDialog
 	}
 
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0
-
-		Footer {
-			id: bottomBarRoot
-			Layout.fillWidth: true
-			selectedItem: root.selectedItem
-
-			Button {
-				text: qsTr("Add Instance")
-				icon.name: "list-add"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
-				onClicked: {
-					addWindow.show()
-				}
-			}
-
-			Item {
-				Layout.fillWidth: true
-			}
-
-			Button {
-				text: qsTr("Edit")
-				icon.name: "edit-paste"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
-				enabled: root.selectedItem !== null
-				onClicked: openEditWindow()
-			}
-		}
 
 		Rectangle {
 			Layout.fillWidth: true

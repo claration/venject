@@ -6,6 +6,8 @@ Dialog {
 	id: root
 
 	property string promptTitle: "Value"
+	property string activeEditType: ""
+	property var targetItem: null
 
 	title: "Edit " + root.promptTitle
 
@@ -20,6 +22,17 @@ Dialog {
 		textField.text = root.initialValue
 		textField.forceActiveFocus()
 		textField.selectAll()
+	}
+
+	onAccepted: {
+		if (!targetItem) return
+
+		if (root.activeEditType === "Name") {
+			targetItem.name = textField.text
+		} else if (root.activeEditType === "Group") {
+			targetItem.groupName = textField.text
+		}
+		targetItem.saveInstance()
 	}
 
 	contentItem: ColumnLayout {

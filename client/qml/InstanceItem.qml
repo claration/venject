@@ -2,30 +2,56 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Item {
+Button {
 	id: cardRoot
 	width: 110
 	height: 95
 
 	required property var modelData
-	required property bool isSelected
-	readonly property bool isHovered: mouseArea.containsMouse
 
-	property string activeEditType: ""
+	contentItem: ColumnLayout {
+		anchors.fill: parent
 
-	ValuePrompt {
-		id: promptDialog
-		promptTitle: cardRoot.activeEditType
+		ColumnLayout {
+			Layout.alignment: Qt.AlignHCenter
+			spacing: 2
 
-		onAccepted: {
-			if (!modelData) return
+			Item {
+				Layout.alignment: Qt.AlignHCenter
+				Layout.preferredWidth: 38
+				Layout.preferredHeight: 38
 
-			if (cardRoot.activeEditType === "Name") {
-				modelData.name = promptDialog.text
-			} else if (cardRoot.activeEditType === "Group") {
-				modelData.groupName = promptDialog.text
+				Image {
+					anchors.fill: parent
+					sourceSize: Qt.size(38, 38)
+					source: "file:/" + modelData.iconPath
+					fillMode: Image.PreserveAspectFit
+				}
 			}
-			modelData.saveInstance()
+
+			Label {
+				Layout.alignment: Qt.AlignHCenter
+				Layout.preferredWidth: parent.parent.width - 8
+				horizontalAlignment: Text.AlignHCenter
+				text: modelData.name
+				font.pixelSize: 13
+				color: sysPalette.text
+				elide: Text.ElideRight
+			}
+		}
+	}
+
+	onClicked: {
+		modelData.launch()
+	}
+
+	MouseArea {
+		anchors.fill: parent
+		acceptedButtons: Qt.RightButton
+		onClicked: mouse => {
+			if (mouse.button === Qt.RightButton) {
+				contextMenu.popup()
+			}
 		}
 	}
 
@@ -37,9 +63,7 @@ Item {
 			icon.name: "media-playback-start"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/play.svg"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.launch()
-				}
+				modelData.launch()
 			}
 		}
 
@@ -48,9 +72,7 @@ Item {
 			icon.name: "list-add"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.createShortcut()
-				}
+				modelData.createShortcut()
 			}
 		}
 
@@ -61,9 +83,7 @@ Item {
 			icon.name: "edit-paste"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.openEditWindow()
-				}
+				editWindow.openFor(modelData)
 			}
 		}
 
@@ -72,8 +92,8 @@ Item {
 			icon.name: "edit-select-all"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
 			onTriggered: {
-				root.selectedItem = modelData
-				cardRoot.activeEditType = "Name"
+				promptDialog.targetItem = modelData
+				promptDialog.activeEditType = "Name"
 				promptDialog.initialValue = modelData.name
 				promptDialog.open()
 			}
@@ -84,8 +104,8 @@ Item {
 			icon.name: "edit-select-all"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
 			onTriggered: {
-				root.selectedItem = modelData
-				cardRoot.activeEditType = "Group"
+				promptDialog.targetItem = modelData
+				promptDialog.activeEditType = "Group"
 				promptDialog.initialValue = modelData.groupName ? modelData.groupName : ""
 				promptDialog.open()
 			}
@@ -98,80 +118,8 @@ Item {
 			icon.name: "delete"
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.svg"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.removeInstance()
-					root.refreshInstances()
-				}
-			}
-		}
-	}
-
-	MouseArea {
-		id: mouseArea
-		anchors.fill: parent
-		hoverEnabled: true
-		cursorShape: Qt.PointingHandCursor
-		acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-		onClicked: mouse => {
-			root.selectedItem = modelData
-
-			if (mouse.button === Qt.RightButton) {
-				contextMenu.popup()
-			}
-		}
-
-		onDoubleClicked: {
-			root.selectedItem = modelData
-			modelData.launch()
-		}
-	}
-
-	ColumnLayout {
-		anchors.centerIn: parent
-		spacing: 6
-		width: parent.width
-
-		Item {
-			Layout.alignment: Qt.AlignHCenter
-			Layout.preferredWidth: 48
-			Layout.preferredHeight: 48
-
-			Rectangle {
-				anchors.fill: parent
-				radius: 6
-				color: isSelected ? sysPalette.highlight : "transparent"
-			}
-
-			Image {
-				anchors.centerIn: parent
-				width: 38
-				height: 38
-				sourceSize: Qt.size(38, 38)
-				source: "file:/" + modelData.iconPath
-				fillMode: Image.PreserveAspectFit
-			}
-		}
-
-		Item {
-			Layout.alignment: Qt.AlignHCenter
-			Layout.preferredWidth: parent.width - 8
-			Layout.preferredHeight: 24
-
-			Rectangle {
-				anchors.fill: parent
-				radius: 4
-				color: isSelected ? sysPalette.highlight : sysPalette.mid
-			}
-
-			Label {
-				anchors.centerIn: parent
-				width: parent.width - 6
-				horizontalAlignment: Text.AlignHCenter
-				text: modelData.name
-				font.pixelSize: 13
-				color: isSelected ? sysPalette.highlightedText : sysPalette.text
-				elide: Text.ElideRight
+				modelData.removeInstance()
+				root.refreshInstances()
 			}
 		}
 	}

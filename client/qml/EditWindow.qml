@@ -13,6 +13,11 @@ Window {
 	visible: true
 
 	property var selectedItem: null
+	function openFor(item) {
+		selectedItem = item
+		show()
+		raise()
+	}
 
 	property string lastLogContents: ""
 	property var envModel: []

@@ -217,28 +217,38 @@ QString LaunchInstance::updaterFileOutputPath() const
 
 void LaunchInstance::setUpdaterFileOutputPath(const QString &path)
 {
-    if (_updaterFileOutputPath == path) return;
-    if (!QDir().mkpath(path)) return;
+	if (_updaterFileOutputPath == path) return;
+	if (!QDir().mkpath(path)) return;
 
-    _updaterFileOutputPath = path;
-    emit updaterFileOutputPathChanged();
+	_updaterFileOutputPath = path;
+	emit updaterFileOutputPathChanged();
 }
 
 #include "../../shared/shared.hpp" // OurExecutablePath
 
-bool LaunchInstance::launch() const
+QVariantMap LaunchInstance::launch() const
 {
+	QVariantMap result;
 	QProcess process;
-
-	QStringList args;
-	args.append("-i");
-	args.append(_id);
 
 	process.setEnvironment(QProcess::systemEnvironment() << "__VENCORDLAUNCHER_MODE_CLI=1");
 	process.setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
-	process.setArguments(args);
-	process.startDetached();
-	return true;
+	process.setArguments({"-i", _id});
+
+	process.start();
+
+	if (!process.waitForStarted() || !process.waitForFinished(-1) ||
+		process.exitStatus() == QProcess::CrashExit)
+	{
+		result["exitCode"] = -1;
+		result["error"] = process.errorString();
+		return result;
+	}
+
+	result["exitCode"] = process.exitCode();
+	result["error"] = "";
+
+	return result;
 }
 
 #include "PlatformSpecific.hpp"
@@ -523,18 +533,19 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	const std::string  dllPath		  = shared::OurHookLibraryPath().string();
 
 	if (!DetourCreateProcessWithDllExW(
-			executablePath.c_str(),
-			mutableCommandLine.data(),
-			nullptr,
-			nullptr,
-			TRUE,
-			CREATE_UNICODE_ENVIRONMENT,
-			environmentBlock.data(),
-			nullptr,
-			&startupInfo,
-			&processInfo,
-			dllPath.c_str(),
-			nullptr)) {
+		executablePath.c_str(),
+		mutableCommandLine.data(),
+		nullptr,
+		nullptr,
+		TRUE,
+		CREATE_UNICODE_ENVIRONMENT,
+		environmentBlock.data(),
+		nullptr,
+		&startupInfo,
+		&processInfo,
+		dllPath.c_str(),
+		nullptr))
+	{
 		qWarning() << "DetourCreateProcessWithDllExW failed:" << GetLastError();
 		CloseHandle(hLogFile);
 		return;

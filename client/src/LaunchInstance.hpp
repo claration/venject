@@ -99,7 +99,7 @@ public:
 	[[nodiscard]] QString updaterFileOutputPath() const;
 	void setUpdaterFileOutputPath(const QString &path);
 
-	Q_INVOKABLE bool launch() const;
+	Q_INVOKABLE QVariantMap launch() const;
 	Q_INVOKABLE bool createShortcut() const;
 	Q_INVOKABLE bool saveInstance() const;
 	Q_INVOKABLE bool removeInstance() const;
