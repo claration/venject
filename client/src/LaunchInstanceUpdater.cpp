@@ -171,6 +171,16 @@ void LaunchInstanceUpdater::saveLocalVersion(const QString &version) {
 
 void LaunchInstanceUpdater::startNextDownload() {
 	if (m_downloadIndex >= m_assetsToDownload.size()) {
+		// something about node being shit and trying to find this shit
+		const QString packagePath = QDir(m_outDir).filePath("package.json");
+		if (!QFile::exists(packagePath)) {
+			QFile packageFile(packagePath);
+			if (packageFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+				packageFile.write("{}");
+				packageFile.close();
+			}
+		}
+
 		saveLocalVersion(m_latestReleaseName);
 		QMessageBox::information(nullptr, "Update Complete", "Selected files have been successfully updated!");
 		emit updateFinished(true);
