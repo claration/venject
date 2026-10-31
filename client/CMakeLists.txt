@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(VencordLauncher VERSION 1.0 LANGUAGES CXX)
+set(VERSION "1.0.0" CACHE STRING "Version")
+
+project(VencordLauncher VERSION ${VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(VERSION "1.0.0" CACHE STRING "Version")
 option(ENABLE_QT_DEPLOY "Enable automatic Qt dependency deployment" ON)
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
