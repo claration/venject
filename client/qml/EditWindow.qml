@@ -34,13 +34,13 @@ Window {
 	function loadData() {
 		if (!selectedItem) return
 		launchArgsField.text = selectedItem.launchArguments || ""
-		entryPointField.text = selectedItem.entryPointPath || ""
+		entryPointLabel.text = selectedItem.entryPointPath || ""
 		notesField.text = selectedItem.notes || ""
 		enableLogging.checked = selectedItem.enableLogging || false
 		enableLoggingWrap.checked = selectedItem.enableLoggingWrap || false
 		updaterGithubUrlField.text = selectedItem.updaterGithubUrl || ""
 		updaterFilesField.text = selectedItem.updaterFiles || ""
-		updaterOutputPathField.text = selectedItem.updaterFileOutputPath || ""
+		updaterOutputPathLabel.text = selectedItem.updaterFileOutputPath || ""
 
 		let envs = selectedItem.environmentVariables || {}
 		let arr = []
@@ -93,7 +93,7 @@ Window {
 
 			path = decodeURIComponent(path)
 
-			updaterOutputPathField.text = path
+			updaterOutputPathLabel.text = path
 			if (selectedItem) {
 				selectedItem.updaterFileOutputPath = path
 				selectedItem.saveInstance()
@@ -112,7 +112,7 @@ Window {
 				? fileString.replace("file:///", "")
 				: fileString.replace("file://", "")
 
-			entryPointField.text = path
+			entryPointLabel.text = path
 			if (selectedItem) {
 				selectedItem.entryPointPath = path
 				selectedItem.saveInstance()
@@ -127,10 +127,6 @@ Window {
 		running: enableLogging.checked
 		onTriggered: editWindow.pollLog()
 	}
-
-
-
-
 
 	ColumnLayout {
 		anchors.fill: parent
@@ -271,15 +267,10 @@ Window {
 								Label { text: qsTr("This is how the mod loader is initiated, this happens before Discord actually runs.") }
 								RowLayout {
 									Layout.fillWidth: true
-									TextField {
-										id: entryPointField
+									Label {
+										id: entryPointLabel
 										Layout.fillWidth: true
-										onTextEdited: {
-											if (selectedItem) {
-												selectedItem.entryPointPath = text
-												selectedItem.saveInstance()
-											}
-										}
+										elide: Text.ElideMiddle
 									}
 									Button {
 										text: qsTr("Browse")
@@ -432,15 +423,10 @@ Window {
 								RowLayout {
 									Layout.fillWidth: true
 
-									TextField {
-										id: updaterOutputPathField
+									Label {
+										id: updaterOutputPathLabel
 										Layout.fillWidth: true
-										onTextEdited: {
-											if (selectedItem) {
-												selectedItem.updaterFileOutputPath = text
-												selectedItem.saveInstance()
-											}
-										}
+										elide: Text.ElideMiddle
 									}
 
 									Button {
@@ -500,13 +486,4 @@ Window {
 			}
 		}
 	}
-
-
-
-
-
-
-
-
-
 }
