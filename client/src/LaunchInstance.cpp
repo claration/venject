@@ -61,7 +61,7 @@ void LaunchInstance::setIconPath(const QString &path)
 		src = QUrl(src).toLocalFile();
 	}
 
-	QString dest = QDir(folderPath()).filePath(QFileInfo(src).fileName());
+	QString dest = QDir(folderPath()).filePath("icon." + getIconType());
 
 	if (QFile::exists(dest)) {
 		_iconPath = dest;
@@ -580,7 +580,7 @@ QString LaunchInstance::getSupportedIconTypes() {
 #if defined(Q_OS_WIN)
     return "Icon files (*.ico)";
 #else
-    return "Image files (*.png *.jpg *.jpeg *.svg)";
+    return "Image files (*.png)";
 #endif
 }
 
