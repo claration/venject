@@ -29,6 +29,7 @@ Item {
 		Button {
 			text: qsTr("View Folder")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+			icon.color: "transparent"
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {
@@ -44,6 +45,7 @@ Item {
 		Button {
 			text: qsTr("Launch")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
+			icon.color: "transparent"
 			enabled: root.selectedItem !== null
 			onClicked: {
 				if (root.selectedItem) {

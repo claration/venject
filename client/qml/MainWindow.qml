@@ -145,6 +145,7 @@ ApplicationWindow {
 				Button {
 					text: qsTr("Add Instance")
 					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.png"
+					icon.color: "transparent"
 					onClicked: {
 						addWindow.show()
 						addWindow.raise()
@@ -154,6 +155,7 @@ ApplicationWindow {
 				Button {
 					text: qsTr("Get Help")
 					icon.source: "qrc:/VencordLauncher/resources/glyphs/help.png"
+					icon.color: "transparent"
 					onClicked: {
 						Qt.openUrlExternally("https://discord.gg/vencord")
 					}
@@ -162,6 +164,7 @@ ApplicationWindow {
 				Button {
 					text: qsTr("Donate")
 					icon.source: "qrc:/VencordLauncher/resources/glyphs/donate.png"
+					icon.color: "transparent"
 					onClicked: {
 						Qt.openUrlExternally("https://github.com/sponsors/claration")
 					}

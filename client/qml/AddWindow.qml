@@ -271,12 +271,14 @@ Window {
 			Button {
 				text: qsTr("Cancel")
 				icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
+				icon.color: "transparent"
 				onClicked: addWindow.close()
 			}
 
 			Button {
 				text: qsTr("OK")
 				icon.source: "qrc:/VencordLauncher/resources/glyphs/ok.png"
+				icon.color: "transparent"
 				highlighted: true
 				enabled: addWindow.selectedDiscord !== null && !addWindow.selectedDiscord.isPatched
 				onClicked: {

@@ -108,6 +108,7 @@ Button {
 		MenuItem {
 			text: qsTr("Launch")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
+			icon.color: "transparent"
 			onTriggered: {
 				cardRoot.isLaunching = true
 				modelData.launch()
@@ -117,6 +118,7 @@ Button {
 		MenuItem {
 			text: qsTr("Create Shortcut")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/shortcut.png"
+			icon.color: "transparent"
 			onTriggered: {
 				modelData.createShortcut()
 			}
@@ -127,6 +129,7 @@ Button {
 		MenuItem {
 			text: qsTr("View Folder")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+			icon.color: "transparent"
 			onTriggered: {
 				if (Qt.platform.os == "windows") {
 					Qt.openUrlExternally("file:///" + modelData.folderPath)
@@ -141,6 +144,7 @@ Button {
 		MenuItem {
 			text: qsTr("Edit...")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.png"
+			icon.color: "transparent"
 			onTriggered: {
 				editWindow.openFor(modelData)
 			}
@@ -149,6 +153,7 @@ Button {
 		MenuItem {
 			text: qsTr("Change name...")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/change.png"
+			icon.color: "transparent"
 			onTriggered: {
 				promptDialog.targetItem = modelData
 				promptDialog.activeEditType = "Name"
@@ -160,6 +165,7 @@ Button {
 		MenuItem {
 			text: qsTr("Change group...")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/change.png"
+			icon.color: "transparent"
 			onTriggered: {
 				promptDialog.targetItem = modelData
 				promptDialog.activeEditType = "Group"
@@ -173,6 +179,7 @@ Button {
 		MenuItem {
 			text: qsTr("Delete")
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.png"
+			icon.color: "transparent"
 			onTriggered: {
 				modelData.removeInstance()
 				root.refreshInstances()

@@ -208,6 +208,7 @@ Window {
 							Button {
 								text: qsTr("Copy")
 								icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.png"
+								icon.color: "transparent"
 								onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
 							}
 							CheckBox {
@@ -281,6 +282,7 @@ Window {
 									Button {
 										text: qsTr("Browse")
 										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+										icon.color: "transparent"
 										onClicked: entryPointFileDialog.open()
 									}
 								}
@@ -346,6 +348,7 @@ Window {
 								Button {
 									Layout.preferredWidth: 40
 									icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.png"
+									icon.color: "transparent"
 									onClicked: {
 										let arr = Array.from(editWindow.envModel)
 										arr.splice(index, 1)
@@ -360,6 +363,7 @@ Window {
 							Button {
 								text: qsTr("Add")
 								icon.source: "qrc:/VencordLauncher/resources/glyphs/add.png"
+								icon.color: "transparent"
 								onClicked: {
 									let arr = Array.from(editWindow.envModel)
 									arr.push({ key: "", value: "" })
@@ -370,6 +374,7 @@ Window {
 							Button {
 								text: qsTr("Clear")
 								icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
+								icon.color: "transparent"
 								onClicked: {
 									editWindow.envModel = []
 									saveEnv()
@@ -439,6 +444,7 @@ Window {
 									Button {
 										text: qsTr("Browse")
 										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+										icon.color: "transparent"
 										onClicked: updaterOutputFileDialog.open()
 									}
 								}
@@ -487,6 +493,7 @@ Window {
 			Button {
 				text: qsTr("Close")
 				icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
+				icon.color: "transparent"
 				onClicked: editWindow.close()
 			}
 		}
