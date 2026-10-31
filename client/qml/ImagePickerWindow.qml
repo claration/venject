@@ -5,8 +5,8 @@ import QtQuick.Dialogs
 
 Window {
 	id: pickerWindow
-	width: 360
-	height: 280
+	width: 380
+	height: 400
 	title: qsTr("Select an Image")
 	modality: Qt.ApplicationModal
 	visible: false
@@ -40,7 +40,14 @@ Window {
 					"qrc:/VencordLauncher/resources/instances/DiscordStable." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordCanary." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordDevelopment." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/DiscordStable+Vencord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/DiscordCanary+Vencord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/DiscordDevelopment+Vencord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/DiscordStable+Equicord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/DiscordCanary+Equicord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/DiscordDevelopment+Equicord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/Vencord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/VencordContributor." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/Equicord." + LaunchInstanceWrapper.getIconType()
 				]
 
