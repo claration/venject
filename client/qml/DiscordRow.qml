@@ -43,7 +43,9 @@ RowLayout {
 		Text {
 			id: contentText
 			text: root.discordItem
-				? (root.discordItem.branch + (root.discordItem.isFlatpak ? " (flatpak)" : ""))
+				? (root.discordItem.branch +
+				(root.discordItem.isFlatpak ? " (flatpak)" : "") +
+				(root.discordItem.isPatched ? " (patched)" : ""))
 				: root.emptyText
 			color: root.textColor
 			font.bold: true

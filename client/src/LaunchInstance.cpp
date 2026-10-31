@@ -426,12 +426,22 @@ LaunchInstance* LaunchInstance::getInstanceById(const QString &id)
 #endif
 
 #include "LaunchInstanceUpdater.hpp"
+#include <QMessageBox>
 
 void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	LaunchInstance *instance = LaunchInstance::getInstanceById(id);
 	if (!instance) return;
 	DiscordInstall *discordInstall = DiscordInstall::getInstanceByUniqueIdentifier(instance->discordUniqueIdentifier());
 	if (!discordInstall) return;
+
+	if (discordInstall->isPatched()) {
+		QMessageBox::critical(
+			nullptr,
+			tr("Cannot Launch"),
+			tr("You cannot launch this Discord instance as it's been manually patched with another tool, to continue, unpatch it with the original tool used to patch this instance.")
+		);
+		exit(1);
+	}
 
 	// updater
 	if (!instance->updaterGithubUrl().isEmpty()) {

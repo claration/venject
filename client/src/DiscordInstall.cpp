@@ -125,9 +125,27 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 		{home + "/.config/discord", "Discord", "Stable", false},
 		{home + "/.config/discordcanary", "DiscordCanary", "Canary", false},
 		{home + "/.config/discordptb", "DiscordPTB", "PTB", false},
+
 		{home + "/.var/app/com.discordapp.Discord/config/discord", "Discord", "Stable", true},
 		{home + "/.var/app/com.discordapp.DiscordCanary/config/discord", "DiscordCanary", "Canary", true},
-		{home + "/.var/app/com.discordapp.DiscordPTB/config/discord", "DiscordPTB", "PTB", true}
+		{home + "/.var/app/com.discordapp.DiscordPTB/config/discord", "DiscordPTB", "PTB", true},
+
+		{"/opt/discord", "Discord", "Stable", false},
+		{"/opt/discordcanary", "DiscordCanary", "Canary", false},
+		{"/opt/discordptb", "DiscordPTB", "PTB", false},
+
+		{"/usr/share/discord", "Discord", "Stable", false},
+		{"/usr/share/discordcanary", "DiscordCanary", "Canary", false},
+		{"/usr/share/discordptb", "DiscordPTB", "PTB", false},
+		{"/usr/lib64/discord", "Discord", "Stable", false},
+
+		{home + "/.local/share/discord", "Discord", "Stable", false},
+		{home + "/.dvm/discord", "Discord", "Stable", false},
+
+		{"/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord", "discord", "Stable", true},
+		{"/var/lib/flatpak/app/com.discordapp.DiscordCanary/current/active/files/discord-canary", "discord-canary", "Canary", true},
+		{"/var/lib/flatpak/app/com.discordapp.DiscordPTB/current/active/files/discord-ptb", "discord-ptb", "PTB", true},
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord", "discord", "Stable", true},
 #endif
 	};
 
@@ -152,22 +170,25 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 			}
 		}
 
-		std::ranges::sort(versions, [](const auto &a, const auto &b) {
-			return b.version < a.version;
-		});
-
 		bool found = false;
-		for (const auto &verEntry : versions) {
-			QString exe = verEntry.dirPath + "/" + check.exeName;
+		if (!versions.isEmpty()) {
+			std::ranges::sort(versions, [](const auto &a, const auto &b) {
+				return b.version < a.version;
+			});
+
+			for (const auto &verEntry : versions) {
+				QString exe = verEntry.dirPath + "/" + check.exeName;
 #if defined(Q_OS_WIN)
-			exe += ".exe";
+				exe += ".exe";
 #endif
-			if (add(exe, check.branch, check.flatpak, baseDir.absolutePath())) {
-				found = true;
-				break;
+				if (add(exe, check.branch, check.flatpak, baseDir.absolutePath())) {
+					found = true;
+					break;
+				}
 			}
 		}
 
+		// Fallback
 		if (!found) {
 			QString exe = baseDir.absolutePath() + "/" + check.exeName;
 #if defined(Q_OS_WIN)

@@ -6,11 +6,26 @@ import VencordLauncher
 Window {
 	id: addWindow
 
-	property var discordList: DiscordInstallWrapper.getInstances()
+	property var discordList: []
 	property var selectedDiscord: null
 	property string selectedPreset: "vencord"
 	property bool hasCustomImage: false
 	property url manualImageSource: ""
+
+	// Reset
+	function resetForm() {
+		discordList = DiscordInstallWrapper.getInstances()
+
+		let firstUnpatched = discordList.find(item => !item.isPatched)
+		selectedDiscord = firstUnpatched !== undefined ? firstUnpatched : (discordList.length > 0 ? discordList[0] : null)
+
+		selectedPreset = "vencord"
+		hasCustomImage = false
+		manualImageSource = ""
+
+		if (nameField) nameField.text = ""
+		if (groupField) groupField.text = ""
+	}
 
 	property url currentImageSource: {
 		if (hasCustomImage) {
@@ -51,22 +66,12 @@ Window {
 	color: sysPalette.window
 
 	Component.onCompleted: {
-		if (!selectedDiscord && discordList && discordList.length > 0) {
-			selectedDiscord = discordList[0]
-		}
+		resetForm()
 	}
 
-	onActiveChanged: {
-		if (active) {
-			let previousIdentifier = selectedDiscord ? selectedDiscord.uniqueIdentifier : null
-			discordList = DiscordInstallWrapper.getInstances()
-
-			if (previousIdentifier) {
-				let foundItem = discordList.find(item => item.uniqueIdentifier === previousIdentifier)
-				selectedDiscord = foundItem !== undefined ? foundItem : (discordList.length > 0 ? discordList[0] : null)
-			} else if (!selectedDiscord && discordList.length > 0) {
-				selectedDiscord = discordList[0]
-			}
+	onVisibleChanged: {
+		if (visible) {
+			resetForm()
 		}
 	}
 
@@ -184,7 +189,11 @@ Window {
 							model: addWindow.discordList
 							currentIndex: {
 								if (!addWindow.selectedDiscord) return -1
-								return addWindow.discordList.findIndex(item => item.uniqueIdentifier === addWindow.selectedDiscord.uniqueIdentifier)
+								let index = addWindow.discordList.findIndex(item => item.uniqueIdentifier === addWindow.selectedDiscord.uniqueIdentifier)
+								if (index !== -1 && addWindow.discordList[index].isPatched) {
+									return -1
+								}
+								return index
 							}
 
 							delegate: ItemDelegate {
@@ -192,6 +201,9 @@ Window {
 								required property var modelData
 								width: discordListView.width
 								height: 46
+
+								enabled: !modelData.isPatched
+								opacity: enabled ? 1.0 : 0.5
 
 								highlighted: addWindow.selectedDiscord && addWindow.selectedDiscord.uniqueIdentifier === modelData.uniqueIdentifier
 
@@ -201,14 +213,16 @@ Window {
 								}
 
 								background: Rectangle {
-									color: parent.highlighted
+									color: !parent.enabled ? "transparent" : (parent.highlighted
 										? sysPalette.highlight
-										: (parent.hovered ? Qt.rgba(sysPalette.highlight.r, sysPalette.highlight.g, sysPalette.highlight.b, 0.25) : "transparent")
+										: (parent.hovered ? Qt.rgba(sysPalette.highlight.r, sysPalette.highlight.g, sysPalette.highlight.b, 0.25) : "transparent"))
 									radius: 4
 								}
 
 								onClicked: {
-									addWindow.selectedDiscord = modelData
+									if (!modelData.isPatched) {
+										addWindow.selectedDiscord = modelData
+									}
 								}
 							}
 						}
@@ -273,7 +287,7 @@ Window {
 				text: qsTr("OK")
 				icon.source: "qrc:/VencordLauncher/resources/glyphs/ok.png"
 				highlighted: true
-				enabled: addWindow.selectedDiscord !== null
+				enabled: addWindow.selectedDiscord !== null && !addWindow.selectedDiscord.isPatched
 				onClicked: {
 					let instanceName = nameField.text.trim() !== "" ? nameField.text.trim() : nameField.placeholderText
 					let groupName = groupField.text.trim()
