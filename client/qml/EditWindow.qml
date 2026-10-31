@@ -82,13 +82,35 @@ Window {
 	Component.onCompleted: loadData()
 	onSelectedItemChanged: if (selectedItem) loadData()
 
+	FolderDialog {
+		id: updaterOutputFileDialog
+		title: qsTr("Choose Updater Output Folder")
+		onAccepted: {
+			let folderString = selectedFolder.toString()
+			let path = Qt.platform.os === "windows"
+				? folderString.replace("file:///", "")
+				: folderString.replace("file://", "")
+
+			path = decodeURIComponent(path)
+
+			updaterOutputPathField.text = path
+			if (selectedItem) {
+				selectedItem.updaterFileOutputPath = path
+				selectedItem.saveInstance()
+			}
+		}
+	}
+
 	FileDialog {
 		id: entryPointFileDialog
 		title: qsTr("Choose Vencord Entrypoint")
 		fileMode: FileDialog.OpenFile
 		nameFilters: ["Patcher files (*.js)", "All files (*)"]
 		onAccepted: {
-			const path = selectedFile.toString().replace("file://", "")
+			const path = Qt.platform.os === "windows"
+				? fileString.replace("file:///", "")
+				: fileString.replace("file://", "")
+
 			entryPointField.text = path
 			if (selectedItem) {
 				selectedItem.entryPointPath = path
