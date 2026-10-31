@@ -28,8 +28,8 @@ Button {
 					sourceSize: Qt.size(38, 38)
 					source: "file:/" + modelData.iconPath
 					fillMode: Image.PreserveAspectFit
-
 					opacity: cardRoot.isLaunching ? 0 : 1
+
 					Behavior on opacity {
 						NumberAnimation { duration: 150 }
 					}
@@ -39,8 +39,8 @@ Button {
 					anchors.fill: parent
 					spinning: cardRoot.isLaunching
 					sourceImage: "qrc:/VencordLauncher/resources/glyphs/edit.png"
-
 					opacity: cardRoot.isLaunching ? 1 : 0
+
 					Behavior on opacity {
 						NumberAnimation { duration: 150 }
 					}
@@ -59,13 +59,30 @@ Button {
 		}
 	}
 
+	Dialog {
+		id: errorDialog
+		title: qsTr("Launch Error")
+		standardButtons: Dialog.OK
+		modal: true
+
+		property string errorMessage: ""
+
+		contentItem: Label {
+			text: errorDialog.errorMessage
+			wrapMode: Text.WordWrap
+			color: sysPalette.text
+		}
+	}
+
 	Connections {
 		target: modelData
 		function onLaunchFinished(exitCode, error) {
 			cardRoot.isLaunching = false
 			console.log("Launched:", modelData)
+
 			if (exitCode !== 0) {
-				//
+				errorDialog.errorMessage = error ? error : qsTr("Process exited with code %1").arg(exitCode)
+				errorDialog.open()
 			}
 		}
 	}
