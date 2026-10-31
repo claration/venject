@@ -32,7 +32,7 @@ Window {
 			return manualImageSource
 		}
 
-		let discordPrefix = selectedDiscord.branc
+		let discordPrefix = selectedDiscord.branch
 		let iconName = discordPrefix
 		if (selectedPreset === "vencord") {
 			iconName = discordPrefix + "+Vencord"

@@ -521,7 +521,6 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 		process.setArguments(_arguments);
 		process.setProcessEnvironment(QProcessEnvironment::systemEnvironment());
 	} else {
-		qDebug() << "normal";
 		process.setProgram(discordInstall->exe());
 		process.setProcessEnvironment(env);
 
