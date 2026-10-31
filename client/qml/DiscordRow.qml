@@ -16,11 +16,11 @@ RowLayout {
 
 	function getBranchIcon(branch, isFlatpak) {
 		let branchLower = branch ? branch.toLowerCase() : ""
-		let iconPath = "qrc:/VencordLauncher/resources/instances/DiscordStable." + LaunchInstanceWrapper.getIconType()
+		let iconPath = "qrc:/VencordLauncher/resources/instances/Discord." + LaunchInstanceWrapper.getIconType()
 
-		if (branchLower.includes("canary")) {
+		if (branchLower.includes("discordcanary")) {
 			iconPath = "qrc:/VencordLauncher/resources/instances/DiscordCanary." + LaunchInstanceWrapper.getIconType()
-		} else if (branchLower.includes("development")) {
+		} else if (branchLower.includes("discorddevelopment")) {
 			iconPath = "qrc:/VencordLauncher/resources/instances/DiscordDevelopment." + LaunchInstanceWrapper.getIconType()
 		}
 
@@ -45,7 +45,8 @@ RowLayout {
 			text: root.discordItem
 				? (root.discordItem.branch +
 				(root.discordItem.isFlatpak ? " (flatpak)" : "") +
-				(root.discordItem.isPatched ? " (patched)" : ""))
+				(root.discordItem.isPatched ? " (patched)" : "") +
+				(root.discordItem.isSystemFlatpak ? " (system)" : ""))
 				: root.emptyText
 			color: root.textColor
 			font.bold: true

@@ -468,7 +468,10 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	QJsonArray argvJson;
 	for (const auto &arg : argv) argvJson.append(arg);
 
-	auto env = QProcessEnvironment::systemEnvironment();
+	QProcessEnvironment env;
+	if (!discordInstall->isFlatpak()) {
+		env = QProcessEnvironment::systemEnvironment();
+	}
 	env.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
 	env.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
 	env.insert("HOOK_DLL_PATH", QString::fromStdString(shared::OurHookLibraryPath().string()));
@@ -482,14 +485,49 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 
 #ifdef Q_OS_LINUX
 	if (!instance->entryPointPath().isEmpty()) {
-		env.insert("LD_PRELOAD", QString::fromStdString(shared::OurHookLibraryPath().string()));
+		if (discordInstall->isFlatpak()) {
+			env.insert("ZYPAK_LD_PRELOAD", QString::fromStdString(shared::OurHookLibraryPath().string()));
+		} else {
+			env.insert("LD_PRELOAD", QString::fromStdString(shared::OurHookLibraryPath().string()));
+		}
 	}
 
+	const QStringList _launchArguments = instance->launchArguments().split(' ', Qt::SkipEmptyParts);
+
 	QProcess process;
-	process.setProcessEnvironment(env);
-	process.setProgram(discordInstall->exe());
-	const QStringList _arguments = instance->launchArguments().split(' ', Qt::SkipEmptyParts);
-	process.setArguments(_arguments);
+	if (discordInstall->isFlatpak()) {
+		process.setProgram("flatpak");
+
+		QStringList _arguments{"run"};
+
+		if (discordInstall->isSystemFlatpak()) {
+			_arguments.append("--system");
+		} else {
+			_arguments.append("--user");
+		}
+
+		_arguments.append("--filesystem=" + QString::fromStdString(shared::OurExecutablePath().string()) + ":ro");
+		_arguments.append("--filesystem=" + QString::fromStdString(shared::OurHookLibraryPath().string()) + ":ro");
+		_arguments.append("--filesystem=" + instance->folderPath() + ":create");
+
+		for (const QString &key : env.keys()) {
+			QString value = env.value(key);
+			_arguments.append(QString("--env=%1=%2").arg(key, value));
+		}
+
+		_arguments.append("com.discordapp." + discordInstall->branch());
+		_arguments.append(_launchArguments);
+
+		process.setArguments(_arguments);
+		process.setProcessEnvironment(QProcessEnvironment::systemEnvironment());
+	} else {
+		qDebug() << "normal";
+		process.setProgram(discordInstall->exe());
+		process.setProcessEnvironment(env);
+
+		process.setArguments(_launchArguments);
+	}
+
 	process.setStandardOutputFile(instance->logPath(), QIODevice::Truncate);
 	process.setStandardErrorFile(instance->logPath(), QIODevice::Append);
 	process.startDetached();

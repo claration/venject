@@ -37,13 +37,13 @@ Window {
 				cellHeight: 70
 
 				model: [
-					"qrc:/VencordLauncher/resources/instances/DiscordStable." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/Discord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordCanary." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordDevelopment." + LaunchInstanceWrapper.getIconType(),
-					"qrc:/VencordLauncher/resources/instances/DiscordStable+Vencord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/Discord+Vencord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordCanary+Vencord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordDevelopment+Vencord." + LaunchInstanceWrapper.getIconType(),
-					"qrc:/VencordLauncher/resources/instances/DiscordStable+Equicord." + LaunchInstanceWrapper.getIconType(),
+					"qrc:/VencordLauncher/resources/instances/Discord+Equicord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordCanary+Equicord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/DiscordDevelopment+Equicord." + LaunchInstanceWrapper.getIconType(),
 					"qrc:/VencordLauncher/resources/instances/Vencord." + LaunchInstanceWrapper.getIconType(),

@@ -71,13 +71,13 @@ if(WIN32)
 	set(RESOURCES
 		resources/instances/DiscordCanary.ico
 		resources/instances/DiscordDevelopment.ico
-		resources/instances/DiscordStable.ico
+		resources/instances/Discord.ico
 		resources/instances/DiscordCanary+Vencord.ico
 		resources/instances/DiscordDevelopment+Vencord.ico
-		resources/instances/DiscordStable+Vencord.ico
+		resources/instances/Discord+Vencord.ico
 		resources/instances/DiscordCanary+Equicord.ico
 		resources/instances/DiscordDevelopment+Equicord.ico
-		resources/instances/DiscordStable+Equicord.ico
+		resources/instances/Discord+Equicord.ico
 		resources/instances/Equicord.ico
 		resources/instances/Vencord.ico
 		resources/instances/VencordContributor.ico
@@ -86,13 +86,13 @@ else()
 	set(RESOURCES
 		resources/instances/DiscordCanary.png
 		resources/instances/DiscordDevelopment.png
-		resources/instances/DiscordStable.png
+		resources/instances/Discord.png
 		resources/instances/DiscordCanary+Vencord.png
 		resources/instances/DiscordDevelopment+Vencord.png
-		resources/instances/DiscordStable+Vencord.png
+		resources/instances/Discord+Vencord.png
 		resources/instances/DiscordCanary+Equicord.png
 		resources/instances/DiscordDevelopment+Equicord.png
-		resources/instances/DiscordStable+Equicord.png
+		resources/instances/Discord+Equicord.png
 		resources/instances/Equicord.png
 		resources/instances/Vencord.png
 		resources/instances/VencordContributor.png

@@ -9,6 +9,7 @@ DiscordInstall::DiscordInstall(
 	QString		  unique_identifier,
 	QString		  branch,
 	const bool	  is_flatpak,
+	const bool	  is_system_flatpak,
 	const bool	  is_patched)
 	: QObject(parent),
 	  _exe(exe),
@@ -16,6 +17,7 @@ DiscordInstall::DiscordInstall(
 	  _uniqueIdentifier(std::move(unique_identifier)),
 	  _branch(std::move(branch)),
 	  _isFlatpak(is_flatpak),
+	  _isSystemFlatpak(is_system_flatpak),
 	  _isPatched(is_patched)
 {
 }
@@ -43,6 +45,11 @@ QString DiscordInstall::branch() const
 bool DiscordInstall::isFlatpak() const
 {
 	return this->_isFlatpak;
+}
+
+bool DiscordInstall::isSystemFlatpak() const
+{
+	return this->_isSystemFlatpak;
 }
 
 bool DiscordInstall::isPatched() const
@@ -76,7 +83,13 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 		return version;
 	};
 
-	auto add = [&](const QString &exePath, const QString &branch, bool flatpak, const QString &uniqueIdentifier) {
+	auto add = [&](
+		const QString &exePath,
+		const QString &branch,
+		bool flatpak,
+		bool isSystemFlatpak,
+		const QString &uniqueIdentifier)
+	{
 		QFileInfo exeInfo(exePath);
 		if (!exeInfo.exists() || (!flatpak && exeInfo.isSymLink()))
 			return false;
@@ -104,6 +117,7 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 			uniqueIdentifier,
 			branch,
 			flatpak,
+			isSystemFlatpak,
 			isPatched
 		));
 		return true;
@@ -112,46 +126,46 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 	struct CheckConfig {
 		QString     base;
 		QString     exeName;
-		QString     branch;
 		bool        flatpak;
+		bool        isSystemFlatpak;
 	};
 
 	QList<CheckConfig> checks = {
 #if defined(Q_OS_WIN)
-		{home + "/AppData/Local/Discord", "Discord", "Stable", false},
-		{home + "/AppData/Local/DiscordCanary", "DiscordCanary", "Canary", false},
-		{home + "/AppData/Local/DiscordPTB", "DiscordPTB", "PTB", false}
+		{home + "/AppData/Local/Discord", "Discord", false, false},
+		{home + "/AppData/Local/DiscordCanary", "DiscordCanary", false, false},
+		{home + "/AppData/Local/DiscordPTB", "DiscordPTB", false, false}
 #else
-		{home + "/.config/discord", "Discord", "Stable", false},
-		{home + "/.config/discordcanary", "DiscordCanary", "Canary", false},
-		{home + "/.config/discordptb", "DiscordPTB", "PTB", false},
+		{home + "/.config/discord", "Discord", false, false},
+		{home + "/.config/discordcanary", "DiscordCanary", false, false},
+		{home + "/.config/discordptb", "DiscordPTB", false, false},
 
-		{home + "/.var/app/com.discordapp.Discord/config/discord", "Discord", "Stable", true},
-		{home + "/.var/app/com.discordapp.DiscordCanary/config/discord", "DiscordCanary", "Canary", true},
-		{home + "/.var/app/com.discordapp.DiscordPTB/config/discord", "DiscordPTB", "PTB", true},
+		{home + "/.var/app/com.discordapp.Discord/config/discord", "Discord", true, false},
+		{home + "/.var/app/com.discordapp.DiscordCanary/config/discord", "DiscordCanary", true, false},
+		{home + "/.var/app/com.discordapp.DiscordPTB/config/discord", "DiscordPTB", true, false},
 
-		{"/opt/discord", "Discord", "Stable", false},
-		{"/opt/discordcanary", "DiscordCanary", "Canary", false},
-		{"/opt/discordptb", "DiscordPTB", "PTB", false},
+		{"/opt/discord", "Discord", false, false},
+		{"/opt/discordcanary", "DiscordCanary", false, false},
+		{"/opt/discordptb", "DiscordPTB", false, false},
 
-		{"/usr/share/discord", "Discord", "Stable", false},
-		{"/usr/share/discordcanary", "DiscordCanary", "Canary", false},
-		{"/usr/share/discordptb", "DiscordPTB", "PTB", false},
+		{"/usr/share/discord", "Discord", false, false},
+		{"/usr/share/discordcanary", "DiscordCanary", false, false},
+		{"/usr/share/discordptb", "DiscordPTB", false, false},
 
-		{"/usr/lib64/discord", "Discord", "Stable", false},
-		{"/usr/lib64/discordcanary", "Discord", "Canary", false},
-		{"/usr/lib64/discordptb", "Discord", "PTB", false},
+		{"/usr/lib64/discord", "Discord", false, false},
+		{"/usr/lib64/discordcanary", "Discord", false, false},
+		{"/usr/lib64/discordptb", "Discord", false, false},
 
-		{home + "/.local/share/discord", "Discord", "Stable", false},
-		{home + "/.dvm/discord", "Discord", "Stable", false},
+		{home + "/.local/share/discord", "Discord", false, false},
+		{home + "/.dvm/discord", "Discord", false, false},
 
-		{"/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord", "Discord", "Stable", true},
-		{"/var/lib/flatpak/app/com.discordapp.DiscordCanary/current/active/files/discord-canary", "DiscordCanary", "Canary", true},
-		{"/var/lib/flatpak/app/com.discordapp.DiscordPTB/current/active/files/discord-ptb", "DiscordPTB", "PTB", true},
+		{"/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord", "Discord", true, true},
+		{"/var/lib/flatpak/app/com.discordapp.DiscordCanary/current/active/files/discord-canary", "DiscordCanary", true, true},
+		{"/var/lib/flatpak/app/com.discordapp.DiscordPTB/current/active/files/discord-ptb", "DiscordPTB", true, true},
 
-		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord", "Discord", "Stable", true},
-		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord-canary", "DiscordCanary", "Stable", true},
-		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord-ptb", "DiscordPTB", "Stable", true},
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord", "Discord", true, false},
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord-canary", "DiscordCanary", true, false},
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord-ptb", "DiscordPTB", true, false},
 #endif
 	};
 
@@ -187,7 +201,7 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 #if defined(Q_OS_WIN)
 				exe += ".exe";
 #endif
-				if (add(exe, check.branch, check.flatpak, baseDir.absolutePath())) {
+				if (add(exe, check.exeName, check.flatpak, check.isSystemFlatpak, baseDir.absolutePath())) {
 					found = true;
 					break;
 				}
@@ -200,7 +214,7 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 #if defined(Q_OS_WIN)
 			exe += ".exe";
 #endif
-			add(exe, check.branch, check.flatpak, baseDir.absolutePath());
+			add(exe, check.exeName, check.flatpak, check.isSystemFlatpak, baseDir.absolutePath());
 		}
 	}
 

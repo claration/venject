@@ -32,16 +32,7 @@ Window {
 			return manualImageSource
 		}
 
-		let discordPrefix = "DiscordStable"
-		if (selectedDiscord && selectedDiscord.branch) {
-			let branchLower = selectedDiscord.branch.toLowerCase()
-			if (branchLower.includes("canary")) {
-				discordPrefix = "DiscordCanary"
-			} else if (branchLower.includes("development")) {
-				discordPrefix = "DiscordDevelopment"
-			}
-		}
-
+		let discordPrefix = selectedDiscord.branc
 		let iconName = discordPrefix
 		if (selectedPreset === "vencord") {
 			iconName = discordPrefix + "+Vencord"
