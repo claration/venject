@@ -3,6 +3,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 
 #ifdef Q_OS_WIN32
@@ -14,26 +15,45 @@ namespace platform {
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_WIN32)
 
-bool createShortcut(
+QString createShortcut(
 	const QString &name,
 	const QString &fileName,
 	const QString &targetExecutablePath,
 	const QString &targetArguments,
-	const QString &iconPath)
+	const QString &iconPath,
+	ShortcutLocation location)
 {
 
 #ifdef Q_OS_LINUX
-	if (fileName.isEmpty() || targetExecutablePath.isEmpty()) return false;
+	if (location == ShortcutLocation::Autostart) {
+		return QString(); // Autostart is Windows only
+	}
+	if (targetExecutablePath.isEmpty()) return QString();
 
-	QString appsDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
-	if (appsDir.isEmpty()) return false;
+	QString targetDir;
+	QString baseName = fileName.isEmpty() ? name : fileName;
 
-	QDir().mkpath(appsDir);
+	if (location == ShortcutLocation::Applications) {
+		targetDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+	} else if (location == ShortcutLocation::Desktop) {
+		targetDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+	} else if (location == ShortcutLocation::Custom) {
+		targetDir = QDir::tempPath();
+		if (baseName.isEmpty()) baseName = "vencord-launcher-shortcut";
+	}
 
-	QString fullPath = appsDir + "/" + "vencord-launcher-" + fileName + ".desktop";
+	if (targetDir.isEmpty()) return QString();
+	QDir().mkpath(targetDir);
+
+	QString fullPath;
+	if (location == ShortcutLocation::Custom) {
+		fullPath = targetDir + "/" + baseName + ".desktop";
+	} else {
+		fullPath = targetDir + "/vencord-launcher-" + baseName + ".desktop";
+	}
 
 	QFile file(fullPath);
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return QString();
 
 	QTextStream out(&file);
 	out << "[Desktop Entry]\n"
@@ -52,37 +72,60 @@ bool createShortcut(
 		fullPath,
 		QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner | QFile::ReadUser | QFile::ExeUser
 	);
-	return true;
+	return fullPath;
+
 #elif defined(Q_OS_WIN32)
-	if (name.isEmpty() || targetExecutablePath.isEmpty()) return false;
+	if (name.isEmpty() || targetExecutablePath.isEmpty()) return QString();
 
 	PWSTR path = nullptr;
-	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
-	if (FAILED(hr)) return false;
+	HRESULT hr = E_FAIL;
+	QString fullPath;
+	QString subDir;
 
-	QDir programsDir(QString::fromWCharArray(path));
-	CoTaskMemFree(path);
+	if (location == ShortcutLocation::Custom) {
+		QString baseName = fileName.isEmpty() ? name : fileName;
+		QString tempDir = QDir::tempPath();
+		fullPath = tempDir + "/" + baseName + ".lnk";
+		fullPath = QDir::toNativeSeparators(fullPath);
+	} else {
+		if (location == ShortcutLocation::Applications) {
+			hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
+			subDir = "VencordLauncher";
+		} else if (location == ShortcutLocation::Desktop) {
+			hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, nullptr, &path);
+		} else if (location == ShortcutLocation::Autostart) {
+			hr = SHGetKnownFolderPath(FOLDERID_Startup, 0, nullptr, &path);
+		}
 
-	if (!programsDir.mkpath("VencordLauncher")) return false;
+		if (FAILED(hr) || !path) return QString();
 
-	QString fullPath = programsDir.absoluteFilePath("VencordLauncher/Vencord Launcher - " + name + ".lnk");
+		QDir dir(QString::fromWCharArray(path));
+		CoTaskMemFree(path);
+
+		if (!subDir.isEmpty()) {
+			dir.mkpath(subDir);
+		}
+
+		QString dirPath = subDir.isEmpty() ? dir.absolutePath() : dir.absoluteFilePath(subDir);
+		fullPath = dirPath + "/Vencord Launcher - " + name + ".lnk";
+	}
 
 	hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 	const bool uninitialize = SUCCEEDED(hr);
-	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return false;
+	if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) return QString();
 
 	IShellLinkW *shellLink = nullptr;
 	hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink));
 	if (FAILED(hr)) {
 		if (uninitialize) CoUninitialize();
-		return false;
+		return QString();
 	}
 
 	shellLink->SetPath(L"C:\\Windows\\System32\\cmd.exe");
 
 	QString cmdArgs = QString("/c set \"__VENCORDLAUNCHER_MODE_CLI=1\" && start /b \"\" \"%1\"%2")
-					.arg(targetExecutablePath)
-					.arg(targetArguments.isEmpty() ? "" : " " + targetArguments);
+		.arg(targetExecutablePath)
+		.arg(targetArguments.isEmpty() ? "" : " " + targetArguments);
 
 	shellLink->SetArguments(reinterpret_cast<LPCWSTR>(cmdArgs.utf16()));
 	shellLink->SetShowCmd(SW_HIDE);
@@ -103,37 +146,69 @@ bool createShortcut(
 	shellLink->Release();
 	if (uninitialize) CoUninitialize();
 
-	return SUCCEEDED(hr);
+	return SUCCEEDED(hr) ? fullPath : QString();
 #endif
 }
 
 bool deleteShortcut(const QString &fileName)
 {
-#ifdef Q_OS_LINUX
 	if (fileName.isEmpty()) return false;
+	bool deletedAny = false;
 
+#ifdef Q_OS_LINUX
+	// Applications
 	QString appsDir = QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
-	if (appsDir.isEmpty()) return false;
+	if (!appsDir.isEmpty()) {
+		QString appPath = appsDir + "/vencord-launcher-" + fileName + ".desktop";
+		QFile file(appPath);
+		if (file.exists()) {
+			if (file.remove()) deletedAny = true;
+		}
+	}
 
-	QString fullPath = appsDir + "/" + "vencord-launcher-" + fileName + ".desktop";
-
-	QFile file(fullPath);
-	if (file.exists()) return file.remove();
-
-	return true;
+	// Desktop
+	QString desktopDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+	if (!desktopDir.isEmpty()) {
+		QString desktopPath = desktopDir + "/vencord-launcher-" + fileName + ".desktop";
+		QFile file(desktopPath);
+		if (file.exists()) {
+			if (file.remove()) deletedAny = true;
+		}
+	}
 
 #elif defined(Q_OS_WIN32)
-	if (fileName.isEmpty()) return false;
-
 	PWSTR path = nullptr;
-	HRESULT hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
-	if (FAILED(hr)) return false;
+	HRESULT hr = S_OK;
 
-	QString fullPath = QString::fromWCharArray(path) + "\\VencordLauncher\\Vencord Launcher - " + fileName + ".lnk";
-	CoTaskMemFree(path);
+	// Applications folder
+	hr = SHGetKnownFolderPath(FOLDERID_Programs, 0, nullptr, &path);
+	if (SUCCEEDED(hr) && path) {
+		QString appPath = QString::fromWCharArray(path) + "\\VencordLauncher\\Vencord Launcher - " + fileName + ".lnk";
+		CoTaskMemFree(path);
+		path = nullptr;
+		if (QFile::exists(appPath) && QFile::remove(appPath)) deletedAny = true;
+	}
 
-	return QFile::remove(fullPath);
+	// Desktop folder
+	hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, nullptr, &path);
+	if (SUCCEEDED(hr) && path) {
+		QString desktopPath = QString::fromWCharArray(path) + "\\Vencord Launcher - " + fileName + ".lnk";
+		CoTaskMemFree(path);
+		path = nullptr;
+		if (QFile::exists(desktopPath) && QFile::remove(desktopPath)) deletedAny = true;
+	}
+
+	// Autostart folder
+	hr = SHGetKnownFolderPath(FOLDERID_Startup, 0, nullptr, &path);
+	if (SUCCEEDED(hr) && path) {
+		QString startupPath = QString::fromWCharArray(path) + "\\Vencord Launcher - " + fileName + ".lnk";
+		CoTaskMemFree(path);
+		path = nullptr;
+		if (QFile::exists(startupPath) && QFile::remove(startupPath)) deletedAny = true;
+	}
 #endif
+
+	return deletedAny;
 }
 
 #endif

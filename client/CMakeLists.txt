@@ -58,6 +58,7 @@ set(QML_FILES
 	qml/ValuePrompt.qml
 	qml/ImagePickerWindow.qml
 	qml/SpinnerIcon.qml
+	qml/ShortcutWindow.qml
 )
 
 foreach (QML_FILE IN LISTS QML_FILES)

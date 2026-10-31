@@ -65,6 +65,11 @@ ApplicationWindow {
 		visible: false
 	}
 
+	ShortcutWindow {
+		id: shortcutWindow
+		visible: false
+	}
+
 	ValuePrompt {
 		id: promptDialog
 	}

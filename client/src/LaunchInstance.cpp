@@ -260,19 +260,33 @@ void LaunchInstance::launch()
 	process->start();
 }
 
+// wtf?
+bool LaunchInstance::moveFile(const QString &oldPath, const QString &newPath) const {
+	return QFile::rename(oldPath, newPath);
+}
+
 #include "PlatformSpecific.hpp"
 
-bool LaunchInstance::createShortcut() const {
+QString LaunchInstance::createShortcut(ShortcutLocation location) const {
 #if defined(Q_OS_WIN32) || defined(Q_OS_LINUX)
+	platform::ShortcutLocation platLocation;
+	switch (location) {
+		case Custom:       platLocation = platform::ShortcutLocation::Custom; break;
+		case Applications: platLocation = platform::ShortcutLocation::Applications; break;
+		case Desktop:      platLocation = platform::ShortcutLocation::Desktop; break;
+		case Autostart:    platLocation = platform::ShortcutLocation::Autostart; break;
+	}
+
 	return platform::createShortcut(
 		_name,
 		_id,
 		QString::fromStdString(shared::OurExecutablePath().string()),
 		QString("-i %1").arg(_id),
-		_iconPath
+		_iconPath,
+		platLocation
 	);
 #endif
-	return false;
+	return QString();
 }
 
 bool LaunchInstance::saveInstance() const

@@ -1,19 +1,27 @@
 #pragma once
 
+#include <QString>
+
 namespace platform {
 
-#if defined(Q_OS_LINUX) || defined(Q_OS_WIN32)
+enum class ShortcutLocation {
+	Custom,
+	Applications,
+	Desktop,
+	Autostart
+};
 
-bool createShortcut(
+#if defined(Q_OS_LINUX) || defined(Q_OS_WIN32)
+QString createShortcut(
 	const QString &name,
 	const QString &fileName,
 	const QString &targetExecutablePath,
-	const QString &targetArguments = "",
-	const QString &iconPath = ""
+	const QString &targetArguments,
+	const QString &iconPath,
+	ShortcutLocation location
 );
 
 bool deleteShortcut(const QString &fileName);
-
 #endif
 
 }

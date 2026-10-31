@@ -120,7 +120,7 @@ Button {
 			icon.source: "qrc:/VencordLauncher/resources/glyphs/shortcut.png"
 			icon.color: "transparent"
 			onTriggered: {
-				modelData.createShortcut()
+				shortcutWindow.openFor(modelData)
 			}
 		}
 

@@ -100,7 +100,17 @@ public:
 	void setUpdaterFileOutputPath(const QString &path);
 
 	Q_INVOKABLE void launch();
-	Q_INVOKABLE bool createShortcut() const;
+
+	enum ShortcutLocation {
+		Custom = 0,
+		Applications,
+		Desktop,
+		Autostart
+	};
+	Q_ENUM(ShortcutLocation)
+	Q_INVOKABLE QString createShortcut(ShortcutLocation location = Applications) const;
+	Q_INVOKABLE bool moveFile(const QString &oldPath, const QString &newPath) const;
+
 	Q_INVOKABLE bool saveInstance() const;
 	Q_INVOKABLE bool removeInstance() const;
 
