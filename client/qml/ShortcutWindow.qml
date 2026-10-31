@@ -6,7 +6,7 @@ import QtQuick.Dialogs
 Window {
 	id: shortcutWindow
 	width: 380
-	height: 180
+	height: 200
 	title: qsTr("Create Shortcut")
 	modality: Qt.ApplicationModal
 	flags: Qt.Window | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
