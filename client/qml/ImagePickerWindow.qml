@@ -5,7 +5,7 @@ import QtQuick.Dialogs
 
 Window {
 	id: pickerWindow
-	width: 380
+	width: 320
 	height: 400
 	title: qsTr("Select an Image")
 	modality: Qt.ApplicationModal
@@ -21,9 +21,8 @@ Window {
 	signal imageSelected(url imageSource)
 
 	ColumnLayout {
-		spacing: 15
+		spacing: 0
 		anchors.fill: parent
-		anchors.margins: 15
 
 		ScrollView {
 			Layout.fillWidth: true
@@ -33,8 +32,8 @@ Window {
 			GridView {
 				id: gridView
 				width: parent.width
-				cellWidth: 70
-				cellHeight: 70
+				cellWidth: 80
+				cellHeight: 80
 
 				model: [
 					"qrc:/VencordLauncher/resources/instances/Discord." + LaunchInstanceWrapper.getIconType(),
@@ -78,12 +77,29 @@ Window {
 			}
 		}
 
-		Button {
-			Layout.alignment: Qt.AlignHCenter
-			text: qsTr("Browse")
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
-			icon.color: "transparent"
-			onClicked: fileDialog.open()
+		RowLayout {
+			Layout.margins: 12
+			Layout.alignment: Qt.AlignRight
+			spacing: 10
+
+			Item {
+				Layout.fillWidth: true
+			}
+
+			Button {
+				Layout.alignment: Qt.AlignHCenter
+				text: qsTr("Browse")
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+				icon.color: "transparent"
+				onClicked: fileDialog.open()
+			}
+
+			Button {
+				text: qsTr("Cancel")
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
+				icon.color: "transparent"
+				onClicked: pickerWindow.close()
+			}
 		}
 	}
 
