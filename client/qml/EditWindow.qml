@@ -252,11 +252,12 @@ Window {
 
 								Label { text: qsTr("General"); font.pixelSize: 24; font.bold: true }
 
-								Label { text: qsTr("Launch Arguments"); font.bold: true }
-								Label { text: qsTr("Users may choose to have custom launch options for Discord.") }
+								Label { text: qsTr("Launch Arguments"); visible: Qt.platform.os === "linux"; font.bold: true }
+								Label { text: qsTr("Users may choose to have custom launch options for Discord."); visible: Qt.platform.os === "linux" }
 								TextField {
 									id: launchArgsField
 									Layout.fillWidth: true
+									visible: Qt.platform.os === "linux"
 									placeholderText: "--start-minimized --enable-blink-features=MiddleClickAutoscroll"
 									onTextEdited: {
 										if (selectedItem) {
