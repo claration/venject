@@ -107,6 +107,7 @@ Window {
 		fileMode: FileDialog.OpenFile
 		nameFilters: ["Patcher files (*.js)", "All files (*)"]
 		onAccepted: {
+			let fileString = selectedFile.toString()
 			const path = Qt.platform.os === "windows"
 				? fileString.replace("file:///", "")
 				: fileString.replace("file://", "")
