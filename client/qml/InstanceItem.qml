@@ -2,30 +2,86 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Item {
+Button {
 	id: cardRoot
 	width: 110
 	height: 95
 
 	required property var modelData
-	required property bool isSelected
-	readonly property bool isHovered: mouseArea.containsMouse
+	property bool isLaunching: false
+	enabled: !isLaunching
 
-	property string activeEditType: ""
+	contentItem: ColumnLayout {
+		anchors.fill: parent
 
-	ValuePrompt {
-		id: promptDialog
-		promptTitle: cardRoot.activeEditType
+		ColumnLayout {
+			Layout.alignment: Qt.AlignHCenter
+			spacing: 2
 
-		onAccepted: {
-			if (!modelData) return
+			Item {
+				Layout.alignment: Qt.AlignHCenter
+				Layout.preferredWidth: 38
+				Layout.preferredHeight: 38
 
-			if (cardRoot.activeEditType === "Name") {
-				modelData.name = promptDialog.text
-			} else if (cardRoot.activeEditType === "Group") {
-				modelData.groupName = promptDialog.text
+				Image {
+					anchors.fill: parent
+					sourceSize: Qt.size(38, 38)
+					source: "file:/" + modelData.iconPath
+					fillMode: Image.PreserveAspectFit
+
+					opacity: cardRoot.isLaunching ? 0 : 1
+					Behavior on opacity {
+						NumberAnimation { duration: 150 }
+					}
+				}
+
+				SpinnerIcon {
+					anchors.fill: parent
+					spinning: cardRoot.isLaunching
+					sourceImage: "qrc:/VencordLauncher/resources/glyphs/edit.png"
+
+					opacity: cardRoot.isLaunching ? 1 : 0
+					Behavior on opacity {
+						NumberAnimation { duration: 150 }
+					}
+				}
 			}
-			modelData.saveInstance()
+
+			Label {
+				Layout.alignment: Qt.AlignHCenter
+				Layout.preferredWidth: parent.parent.width - 8
+				horizontalAlignment: Text.AlignHCenter
+				text: modelData.name
+				font.pixelSize: 13
+				color: sysPalette.text
+				elide: Text.ElideRight
+			}
+		}
+	}
+
+	Connections {
+		target: modelData
+		function onLaunchFinished(exitCode, error) {
+			cardRoot.isLaunching = false
+			console.log("Launched:", modelData)
+			if (exitCode !== 0) {
+				//
+			}
+		}
+	}
+
+	onClicked: {
+		cardRoot.isLaunching = true
+		modelData.launch()
+	}
+
+	MouseArea {
+		anchors.fill: parent
+		acceptedButtons: Qt.RightButton
+		onClicked: mouse => {
+			if (mouse.button === Qt.RightButton) {
+				contextMenu.popup()
+			}
 		}
 	}
 
@@ -34,22 +90,31 @@ Item {
 
 		MenuItem {
 			text: qsTr("Launch")
-			icon.name: "media-playback-start"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/play.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/launch.png"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.launch()
-				}
+				cardRoot.isLaunching = true
+				modelData.launch()
 			}
 		}
 
 		MenuItem {
 			text: qsTr("Create Shortcut")
-			icon.name: "list-add"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/shortcut.png"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.createShortcut()
+				modelData.createShortcut()
+			}
+		}
+
+		MenuSeparator { }
+
+		MenuItem {
+			text: qsTr("View Folder")
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
+			onTriggered: {
+				if (Qt.platform.os == "windows") {
+					Qt.openUrlExternally("file:///" + modelData.folderPath)
+				} else {
+					Qt.openUrlExternally("file://" + modelData.folderPath)
 				}
 			}
 		}
@@ -58,22 +123,18 @@ Item {
 
 		MenuItem {
 			text: qsTr("Edit...")
-			icon.name: "edit-paste"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.png"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.openEditWindow()
-				}
+				editWindow.openFor(modelData)
 			}
 		}
 
 		MenuItem {
 			text: qsTr("Change name...")
-			icon.name: "edit-select-all"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/change.png"
 			onTriggered: {
-				root.selectedItem = modelData
-				cardRoot.activeEditType = "Name"
+				promptDialog.targetItem = modelData
+				promptDialog.activeEditType = "Name"
 				promptDialog.initialValue = modelData.name
 				promptDialog.open()
 			}
@@ -81,11 +142,10 @@ Item {
 
 		MenuItem {
 			text: qsTr("Change group...")
-			icon.name: "edit-select-all"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/change.png"
 			onTriggered: {
-				root.selectedItem = modelData
-				cardRoot.activeEditType = "Group"
+				promptDialog.targetItem = modelData
+				promptDialog.activeEditType = "Group"
 				promptDialog.initialValue = modelData.groupName ? modelData.groupName : ""
 				promptDialog.open()
 			}
@@ -95,83 +155,10 @@ Item {
 
 		MenuItem {
 			text: qsTr("Delete")
-			icon.name: "delete"
-			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.svg"
+			icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.png"
 			onTriggered: {
-				if (root.selectedItem) {
-					root.selectedItem.removeInstance()
-					root.refreshInstances()
-				}
-			}
-		}
-	}
-
-	MouseArea {
-		id: mouseArea
-		anchors.fill: parent
-		hoverEnabled: true
-		cursorShape: Qt.PointingHandCursor
-		acceptedButtons: Qt.LeftButton | Qt.RightButton
-
-		onClicked: mouse => {
-			root.selectedItem = modelData
-
-			if (mouse.button === Qt.RightButton) {
-				contextMenu.popup()
-			}
-		}
-
-		onDoubleClicked: {
-			root.selectedItem = modelData
-			modelData.launch()
-		}
-	}
-
-	ColumnLayout {
-		anchors.centerIn: parent
-		spacing: 6
-		width: parent.width
-
-		Item {
-			Layout.alignment: Qt.AlignHCenter
-			Layout.preferredWidth: 48
-			Layout.preferredHeight: 48
-
-			Rectangle {
-				anchors.fill: parent
-				radius: 6
-				color: isSelected ? sysPalette.highlight : "transparent"
-			}
-
-			Image {
-				anchors.centerIn: parent
-				width: 38
-				height: 38
-				sourceSize: Qt.size(38, 38)
-				source: "file:/" + modelData.iconPath
-				fillMode: Image.PreserveAspectFit
-			}
-		}
-
-		Item {
-			Layout.alignment: Qt.AlignHCenter
-			Layout.preferredWidth: parent.width - 8
-			Layout.preferredHeight: 24
-
-			Rectangle {
-				anchors.fill: parent
-				radius: 4
-				color: isSelected ? sysPalette.highlight : sysPalette.mid
-			}
-
-			Label {
-				anchors.centerIn: parent
-				width: parent.width - 6
-				horizontalAlignment: Text.AlignHCenter
-				text: modelData.name
-				font.pixelSize: 13
-				color: isSelected ? sysPalette.highlightedText : sysPalette.text
-				elide: Text.ElideRight
+				modelData.removeInstance()
+				root.refreshInstances()
 			}
 		}
 	}

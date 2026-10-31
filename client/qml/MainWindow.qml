@@ -10,7 +10,6 @@ ApplicationWindow {
 	id: root
 
 	property var instanceList: LaunchInstanceWrapper.getInstances()
-	property var selectedItem: null
 
 	property var groupedInstances: {
 		let groups = {}
@@ -47,15 +46,6 @@ ApplicationWindow {
 
 	function refreshInstances() {
 		instanceList = LaunchInstanceWrapper.getInstances()
-		if (selectedItem && !instanceList.some(item => item.id === selectedItem.id)) {
-			selectedItem = null
-		}
-		console.log(instanceList)
-	}
-
-	function openEditWindow() {
-		editWindow.show()
-		editWindow.raise()
 	}
 
 	Settings {
@@ -73,37 +63,71 @@ ApplicationWindow {
 	EditWindow {
 		id: editWindow
 		visible: false
-		selectedItem: root.selectedItem
+	}
+
+	ValuePrompt {
+		id: promptDialog
 	}
 
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0
 
-		Footer {
-			id: bottomBarRoot
+		Rectangle {
 			Layout.fillWidth: true
-			selectedItem: root.selectedItem
+			height: 1
+			color: sysPalette.light
+		}
 
-			Button {
-				text: qsTr("Add Instance")
-				icon.name: "list-add"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
-				onClicked: {
-					addWindow.show()
+		Item {
+			Layout.fillWidth: true
+			Layout.fillHeight: true
+
+			Column {
+				anchors.centerIn: parent
+				spacing: 8
+				visible: root.groupedInstances.length === 0
+
+				Label {
+					text: qsTr("No instances added")
+					font.pixelSize: 16
+					font.bold: true
+					color: sysPalette.text
+					anchors.horizontalCenter: parent.horizontalCenter
+				}
+
+				Label {
+					text: qsTr("Click 'Create Instance' below to get started.")
+					font.pixelSize: 12
+					color: sysPalette.placeholderText
+					anchors.horizontalCenter: parent.horizontalCenter
 				}
 			}
 
-			Item {
-				Layout.fillWidth: true
-			}
+			ScrollView {
+				anchors.fill: parent
+				clip: true
+				contentWidth: availableWidth
+				visible: root.groupedInstances.length > 0
 
-			Button {
-				text: qsTr("Edit")
-				icon.name: "edit-paste"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/edit.svg"
-				enabled: root.selectedItem !== null
-				onClicked: openEditWindow()
+				background: Rectangle {
+					color: sysPalette.base
+				}
+
+				Column {
+					width: parent.width
+					spacing: 20
+					padding: 16
+
+					Repeater {
+						model: root.groupedInstances
+
+						delegate: InstanceColumn {
+							isVisible: modelData.items.length > 0
+							width: parent.width
+						}
+					}
+				}
 			}
 		}
 
@@ -113,27 +137,33 @@ ApplicationWindow {
 			color: sysPalette.light
 		}
 
-		ScrollView {
-			Layout.fillWidth: true
-			Layout.fillHeight: true
-			clip: true
-			contentWidth: availableWidth
+		ColumnLayout {
+			RowLayout {
+				Layout.margins: 12
+				spacing: 12
 
-			background: Rectangle {
-				color: sysPalette.base
-			}
+				Button {
+					text: qsTr("Add Instance")
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/add.png"
+					onClicked: {
+						addWindow.show()
+						addWindow.raise()
+					}
+				}
 
-			Column {
-				width: parent.width
-				spacing: 20
-				padding: 16
+				Button {
+					text: qsTr("Get Help")
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/help.png"
+					onClicked: {
+						Qt.openUrlExternally("https://discord.gg/vencord")
+					}
+				}
 
-				Repeater {
-					model: root.groupedInstances
-
-					delegate: InstanceColumn {
-						isVisible: modelData.items.length > 0
-						width: parent.width
+				Button {
+					text: qsTr("Donate")
+					icon.source: "qrc:/VencordLauncher/resources/glyphs/donate.png"
+					onClicked: {
+						Qt.openUrlExternally("https://github.com/sponsors/claration")
 					}
 				}
 			}

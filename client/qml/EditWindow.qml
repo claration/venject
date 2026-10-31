@@ -13,6 +13,11 @@ Window {
 	visible: true
 
 	property var selectedItem: null
+	function openFor(item) {
+		selectedItem = item
+		show()
+		raise()
+	}
 
 	property string lastLogContents: ""
 	property var envModel: []
@@ -180,8 +185,7 @@ Window {
 						RowLayout {
 							Button {
 								text: qsTr("Copy")
-								icon.name: "edit-copy"
-								icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.svg"
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/copy.png"
 								onClicked: { logField.selectAll(); logField.copy(); logField.deselect(); }
 							}
 							CheckBox {
@@ -254,8 +258,7 @@ Window {
 									}
 									Button {
 										text: qsTr("Browse")
-										icon.name: "list-add"
-										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
+										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 										onClicked: entryPointFileDialog.open()
 									}
 								}
@@ -320,8 +323,7 @@ Window {
 								}
 								Button {
 									Layout.preferredWidth: 40
-									icon.name: "dialog-close-symbolic"
-									icon.source: "qrc:/VencordLauncher/resources/glyphs/dismiss.svg"
+									icon.source: "qrc:/VencordLauncher/resources/glyphs/delete.png"
 									onClicked: {
 										let arr = Array.from(editWindow.envModel)
 										arr.splice(index, 1)
@@ -335,7 +337,7 @@ Window {
 						RowLayout {
 							Button {
 								text: qsTr("Add")
-								icon.name: "list-add"
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/add.png"
 								onClicked: {
 									let arr = Array.from(editWindow.envModel)
 									arr.push({ key: "", value: "" })
@@ -345,6 +347,7 @@ Window {
 
 							Button {
 								text: qsTr("Clear")
+								icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
 								onClicked: {
 									editWindow.envModel = []
 									saveEnv()
@@ -399,6 +402,7 @@ Window {
 								Label { text: qsTr("Updater File Output Path"); font.bold: true }
 								RowLayout {
 									Layout.fillWidth: true
+
 									TextField {
 										id: updaterOutputPathField
 										Layout.fillWidth: true
@@ -409,10 +413,10 @@ Window {
 											}
 										}
 									}
+
 									Button {
 										text: qsTr("Browse")
-										icon.name: "folder-symbolic"
-										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder-arrow-right.svg"
+										icon.source: "qrc:/VencordLauncher/resources/glyphs/folder.png"
 										onClicked: updaterOutputFileDialog.open()
 									}
 								}
@@ -460,6 +464,7 @@ Window {
 
 			Button {
 				text: qsTr("Close")
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
 				onClicked: editWindow.close()
 			}
 		}

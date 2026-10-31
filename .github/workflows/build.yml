@@ -15,8 +15,8 @@ jobs:
 
       - name: Install Dependencies (apt-get)
         run: |
-          sudo apt-get update 
-          sudo apt-get install -y patchelf
+          sudo apt-get update
+          sudo apt-get install -y patchelf rpm
 
           curl -L -o /tmp/appimagetool https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
           chmod +x /tmp/appimagetool
@@ -38,7 +38,8 @@ jobs:
 
       - name: Build
         run: |
-          make package JOBS=$(nproc) BUILD_TYPE=Release
+          make package JOBS=$(nproc) BUILD_TYPE=Release PACKAGE_GENERATOR=AppImage ENABLE_QT_DEPLOY=ON
+          make package JOBS=$(nproc) BUILD_TYPE=Release PACKAGE_GENERATOR=RPM ENABLE_QT_DEPLOY=OFF
 
       - name: Upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -46,6 +47,7 @@ jobs:
           name: launcher-linux-x86_64
           path: |
             build/*.AppImage
+            build/*.rpm
 
   build-windows:
     runs-on: windows-latest
@@ -73,14 +75,14 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: |
-          make package BUILD_TYPE=Release JOBS=$(nproc) 
+          make package BUILD_TYPE=Release JOBS=$(nproc)
 
       - name: Upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: launcher-windows-x86_64
           path: |
-            build/venject-windows-x86_64-setup.exe
+            build/*-setup.exe
 
   release:
     runs-on: ubuntu-latest

@@ -57,6 +57,9 @@ void LaunchInstance::setIconPath(const QString &path)
 	} else if (src.startsWith("qrc:/")) {
 		src.replace(0, 5, ":");
 	}
+	else if (src.startsWith("file://")) {
+		src = QUrl(src).toLocalFile();
+	}
 
 	QString dest = QDir(folderPath()).filePath(QFileInfo(src).fileName());
 
@@ -217,28 +220,44 @@ QString LaunchInstance::updaterFileOutputPath() const
 
 void LaunchInstance::setUpdaterFileOutputPath(const QString &path)
 {
-    if (_updaterFileOutputPath == path) return;
-    if (!QDir().mkpath(path)) return;
+	if (_updaterFileOutputPath == path) return;
+	if (!QDir().mkpath(path)) return;
 
-    _updaterFileOutputPath = path;
-    emit updaterFileOutputPathChanged();
+	_updaterFileOutputPath = path;
+	emit updaterFileOutputPathChanged();
 }
 
 #include "../../shared/shared.hpp" // OurExecutablePath
 
-bool LaunchInstance::launch() const
+void LaunchInstance::launch()
 {
-	QProcess process;
+	QProcess *process = new QProcess(this);
 
-	QStringList args;
-	args.append("-i");
-	args.append(_id);
+	connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+		this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+			QString errorStr = "";
+			if (exitStatus == QProcess::CrashExit) {
+				exitCode = -1;
+				errorStr = process->errorString();
+			}
 
-	process.setEnvironment(QProcess::systemEnvironment() << "__VENCORDLAUNCHER_MODE_CLI=1");
-	process.setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
-	process.setArguments(args);
-	process.startDetached();
-	return true;
+			emit launchFinished(exitCode, errorStr);
+
+			process->deleteLater();
+		});
+
+	connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
+		if (error == QProcess::FailedToStart) {
+			emit launchFinished(-1, process->errorString());
+			process->deleteLater();
+		}
+	});
+
+	process->setEnvironment(QProcess::systemEnvironment() << "__VENCORDLAUNCHER_MODE_CLI=1");
+	process->setProgram(QString::fromStdString(shared::OurExecutablePath().string()));
+	process->setArguments({"-i", _id});
+
+	process->start();
 }
 
 #include "PlatformSpecific.hpp"
@@ -523,18 +542,19 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	const std::string  dllPath		  = shared::OurHookLibraryPath().string();
 
 	if (!DetourCreateProcessWithDllExW(
-			executablePath.c_str(),
-			mutableCommandLine.data(),
-			nullptr,
-			nullptr,
-			TRUE,
-			CREATE_UNICODE_ENVIRONMENT,
-			environmentBlock.data(),
-			nullptr,
-			&startupInfo,
-			&processInfo,
-			dllPath.c_str(),
-			nullptr)) {
+		executablePath.c_str(),
+		mutableCommandLine.data(),
+		nullptr,
+		nullptr,
+		TRUE,
+		CREATE_UNICODE_ENVIRONMENT,
+		environmentBlock.data(),
+		nullptr,
+		&startupInfo,
+		&processInfo,
+		dllPath.c_str(),
+		nullptr))
+	{
 		qWarning() << "DetourCreateProcessWithDllExW failed:" << GetLastError();
 		CloseHandle(hLogFile);
 		return;

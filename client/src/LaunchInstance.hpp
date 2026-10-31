@@ -99,7 +99,7 @@ public:
 	[[nodiscard]] QString updaterFileOutputPath() const;
 	void setUpdaterFileOutputPath(const QString &path);
 
-	Q_INVOKABLE bool launch() const;
+	Q_INVOKABLE void launch();
 	Q_INVOKABLE bool createShortcut() const;
 	Q_INVOKABLE bool saveInstance() const;
 	Q_INVOKABLE bool removeInstance() const;
@@ -123,4 +123,6 @@ signals:
 	void updaterGithubUrlChanged();
 	void updaterFilesChanged();
 	void updaterFileOutputPathChanged();
+
+	void launchFinished(int exitCode, const QString &errorString);
 };

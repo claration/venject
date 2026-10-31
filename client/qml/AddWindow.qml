@@ -8,7 +8,7 @@ Window {
 
 	property var discordList: DiscordInstallWrapper.getInstances()
 	property var selectedDiscord: null
-	property string selectedPreset: "none"
+	property string selectedPreset: "vencord"
 	property bool hasCustomImage: false
 	property url manualImageSource: ""
 
@@ -17,22 +17,24 @@ Window {
 			return manualImageSource
 		}
 
-		if (selectedPreset === "vencord") {
-			return "qrc:/VencordLauncher/resources/instances/Vencord." + LaunchInstanceWrapper.getIconType()
-		} else if (selectedPreset === "equicord") {
-			return "qrc:/VencordLauncher/resources/instances/Equicord." + LaunchInstanceWrapper.getIconType()
-		}
-
-		let iconPath = "qrc:/VencordLauncher/resources/instances/DiscordStable." + LaunchInstanceWrapper.getIconType()
+		let discordPrefix = "DiscordStable"
 		if (selectedDiscord && selectedDiscord.branch) {
 			let branchLower = selectedDiscord.branch.toLowerCase()
 			if (branchLower.includes("canary")) {
-				iconPath = "qrc:/VencordLauncher/resources/instances/DiscordCanary." + LaunchInstanceWrapper.getIconType()
+				discordPrefix = "DiscordCanary"
 			} else if (branchLower.includes("development")) {
-				iconPath = "qrc:/VencordLauncher/resources/instances/DiscordDevelopment." + LaunchInstanceWrapper.getIconType()
+				discordPrefix = "DiscordDevelopment"
 			}
 		}
-		return iconPath
+
+		let iconName = discordPrefix
+		if (selectedPreset === "vencord") {
+			iconName = discordPrefix + "+Vencord"
+		} else if (selectedPreset === "equicord") {
+			iconName = discordPrefix + "+Equicord"
+		}
+
+		return "qrc:/VencordLauncher/resources/instances/" + iconName + "." + LaunchInstanceWrapper.getIconType()
 	}
 
 	width: 520
@@ -104,8 +106,8 @@ Window {
 
 					contentItem: Item {
 						Image {
-							width: 36
-							height: 36
+							width: 56
+							height: 56
 							anchors.centerIn: parent
 							source: currentImageSource
 							fillMode: Image.PreserveAspectFit
@@ -263,13 +265,13 @@ Window {
 
 			Button {
 				text: qsTr("Cancel")
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/cancel.png"
 				onClicked: addWindow.close()
 			}
 
 			Button {
-				text: qsTr("Create")
-				icon.name: "list-add"
-				icon.source: "qrc:/VencordLauncher/resources/glyphs/add.svg"
+				text: qsTr("OK")
+				icon.source: "qrc:/VencordLauncher/resources/glyphs/ok.png"
 				highlighted: true
 				enabled: addWindow.selectedDiscord !== null
 				onClicked: {

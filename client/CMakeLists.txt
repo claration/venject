@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(VencordLauncher VERSION 1.0 LANGUAGES CXX)
+set(VERSION "1.0.0" CACHE STRING "Version")
+
+project(VencordLauncher VERSION ${VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(VERSION "1.0.0" CACHE STRING "Version")
+option(ENABLE_QT_DEPLOY "Enable automatic Qt dependency deployment" ON)
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS
 	Core
@@ -55,6 +57,7 @@ set(QML_FILES
 	qml/Footer.qml
 	qml/ValuePrompt.qml
 	qml/ImagePickerWindow.qml
+	qml/SpinnerIcon.qml
 )
 
 foreach (QML_FILE IN LISTS QML_FILES)
@@ -69,32 +72,46 @@ if(WIN32)
 		resources/instances/DiscordCanary.ico
 		resources/instances/DiscordDevelopment.ico
 		resources/instances/DiscordStable.ico
+		resources/instances/DiscordCanary+Vencord.ico
+		resources/instances/DiscordDevelopment+Vencord.ico
+		resources/instances/DiscordStable+Vencord.ico
+		resources/instances/DiscordCanary+Equicord.ico
+		resources/instances/DiscordDevelopment+Equicord.ico
+		resources/instances/DiscordStable+Equicord.ico
 		resources/instances/Equicord.ico
 		resources/instances/Vencord.ico
+		resources/instances/VencordContributor.ico
 	)
 else()
 	set(RESOURCES
 		resources/instances/DiscordCanary.png
 		resources/instances/DiscordDevelopment.png
 		resources/instances/DiscordStable.png
+		resources/instances/DiscordCanary+Vencord.png
+		resources/instances/DiscordDevelopment+Vencord.png
+		resources/instances/DiscordStable+Vencord.png
+		resources/instances/DiscordCanary+Equicord.png
+		resources/instances/DiscordDevelopment+Equicord.png
+		resources/instances/DiscordStable+Equicord.png
 		resources/instances/Equicord.png
 		resources/instances/Vencord.png
+		resources/instances/VencordContributor.png
 	)
 endif()
 
 list(APPEND RESOURCES
-	resources/glyphs/add.svg
-	resources/glyphs/arrow-upload.svg
-	resources/glyphs/copy.svg
-	resources/glyphs/delete.svg
-	resources/glyphs/dismiss.svg
-	resources/glyphs/document-list.svg
-	resources/glyphs/edit.svg
-	resources/glyphs/folder-arrow-right.svg
-	resources/glyphs/folder-open.svg
-	resources/glyphs/note.svg
-	resources/glyphs/play.svg
-	resources/glyphs/settings.svg
+	resources/glyphs/add.png
+	resources/glyphs/cancel.png
+	resources/glyphs/change.png
+	resources/glyphs/copy.png
+	resources/glyphs/delete.png
+	resources/glyphs/donate.png
+	resources/glyphs/edit.png
+	resources/glyphs/folder.png
+	resources/glyphs/help.png
+	resources/glyphs/launch.png
+	resources/glyphs/ok.png
+	resources/glyphs/shortcut.png
 )
 
 qt_add_qml_module(${PROJECT_NAME}

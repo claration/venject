@@ -30,7 +30,7 @@ LaunchInstance *LaunchInstanceWrapper::createInstance(
 		QString updaterPath = QDir(instance->folderPath()).filePath("dist");
 		instance->setUpdaterFileOutputPath(updaterPath);
 		instance->setUpdaterGithubUrl("https://api.github.com/repos/Vendicated/Vencord/releases/latest");
-		instance->setUpdaterFiles("patcher.js, preload.js, renderer.js, renderer.css");
+		instance->setUpdaterFiles("patcher.js, patcher.js.map, patcher.js.LEGAL.txt, preload.js, preload.js.map, renderer.js, renderer.js.map, renderer.js.LEGAL.txt, renderer.css, renderer.css.map");
 	} else if (preset == "equicord") {
 		QString patcherPath = QDir(instance->folderPath()).filePath("dist/patcher.js");
 		instance->setEntryPointPath(patcherPath);
@@ -42,7 +42,7 @@ LaunchInstance *LaunchInstanceWrapper::createInstance(
 		QString updaterPath = QDir(instance->folderPath()).filePath("dist");
 		instance->setUpdaterFileOutputPath(updaterPath);
 		instance->setUpdaterGithubUrl("https://api.github.com/repos/Equicord/Equicord/releases/latest");
-		instance->setUpdaterFiles("patcher.js, preload.js, renderer.js, renderer.css");
+		instance->setUpdaterFiles("patcher.js, patcher.js.map, patcher.js.LEGAL.txt, preload.js, preload.js.map, renderer.js, renderer.js.map, renderer.js.LEGAL.txt, renderer.css, renderer.css.map");
 	}
 
 	instance->saveInstance();

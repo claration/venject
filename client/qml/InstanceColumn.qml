@@ -40,9 +40,7 @@ Column {
 
 		Repeater {
 			model: modelData.items
-			delegate: InstanceItem {
-				isSelected: root.selectedItem !== null && root.selectedItem.id === modelData.id
-			}
+			delegate: InstanceItem { }
 		}
 	}
 }
