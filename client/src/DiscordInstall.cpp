@@ -78,7 +78,7 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 
 	auto add = [&](const QString &exePath, const QString &branch, bool flatpak, const QString &uniqueIdentifier) {
 		QFileInfo exeInfo(exePath);
-		if (!exeInfo.isFile() || exeInfo.isSymLink())
+		if (!exeInfo.exists() || (!flatpak && exeInfo.isSymLink()))
 			return false;
 
 		QString resourcesDir = exeInfo.absolutePath() + "/resources";
@@ -137,15 +137,21 @@ QList<DiscordInstall*> DiscordInstall::getInstances()
 		{"/usr/share/discord", "Discord", "Stable", false},
 		{"/usr/share/discordcanary", "DiscordCanary", "Canary", false},
 		{"/usr/share/discordptb", "DiscordPTB", "PTB", false},
+
 		{"/usr/lib64/discord", "Discord", "Stable", false},
+		{"/usr/lib64/discordcanary", "Discord", "Canary", false},
+		{"/usr/lib64/discordptb", "Discord", "PTB", false},
 
 		{home + "/.local/share/discord", "Discord", "Stable", false},
 		{home + "/.dvm/discord", "Discord", "Stable", false},
 
-		{"/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord", "discord", "Stable", true},
-		{"/var/lib/flatpak/app/com.discordapp.DiscordCanary/current/active/files/discord-canary", "discord-canary", "Canary", true},
-		{"/var/lib/flatpak/app/com.discordapp.DiscordPTB/current/active/files/discord-ptb", "discord-ptb", "PTB", true},
-		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord", "discord", "Stable", true},
+		{"/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord", "Discord", "Stable", true},
+		{"/var/lib/flatpak/app/com.discordapp.DiscordCanary/current/active/files/discord-canary", "DiscordCanary", "Canary", true},
+		{"/var/lib/flatpak/app/com.discordapp.DiscordPTB/current/active/files/discord-ptb", "DiscordPTB", "PTB", true},
+
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord", "Discord", "Stable", true},
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord-canary", "DiscordCanary", "Stable", true},
+		{home + "/.local/share/flatpak/app/com.discordapp.Discord/current/active/files/discord-ptb", "DiscordPTB", "Stable", true},
 #endif
 	};
 
