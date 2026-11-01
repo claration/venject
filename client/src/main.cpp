@@ -14,6 +14,7 @@
 
 #include "DiscordInstall.hpp"
 #include "LaunchInstance.hpp"
+#include "../../shared/shared.hpp" // OurExecutablePath
 
 int main(int argc, char **argv)
 {
@@ -54,9 +55,9 @@ int main(int argc, char **argv)
 	parser.process(*app);
 
 	QString		launchId = parser.value(launchIdOpt);
-	QStringList launch_mod_argv;
+	QStringList launch_mod_argv{QString::fromStdString(shared::OurExecutablePath().string())};
 
-	for (int i = 0; i < argc; ++i)
+	for (int i = 1; i < argc; ++i)
 		launch_mod_argv.append(QString::fromLocal8Bit(argv[i]));
 
 #ifdef Q_OS_WIN
