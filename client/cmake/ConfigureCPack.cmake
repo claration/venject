@@ -164,7 +164,7 @@ else()
 	set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 	set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS
-		"libqt6core6, libqt6qml6", "libqt63dquick6"
+		"libqt6core6, libqt6qml6, libqt63dquick6"
 	)
 	# ??
 	set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}")
