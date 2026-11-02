@@ -19,17 +19,15 @@ std::string write_payload_to_tmp()
 	const auto path = std::filesystem::temp_directory_path()
 		/ (MOD_NAME + std::string(".asar"));
 
-	if (!std::filesystem::exists(path)) {
-		std::ofstream file(path, std::ios::binary);
-		if (!file)
-			return {};
+	std::ofstream file(path, std::ios::binary);
+	if (!file)
+		return {};
 
-		file.write(
-			reinterpret_cast<const char *>(g_payload_asar.data),
-			static_cast<std::streamsize>(g_payload_asar.data_len));
-		if (!file)
-			return {};
-	}
+	file.write(
+		reinterpret_cast<const char *>(g_payload_asar.data),
+		static_cast<std::streamsize>(g_payload_asar.data_len));
+	if (!file)
+		return {};
 
 	return path.string();
 }
