@@ -141,16 +141,33 @@ if (WIN32)
 elseif(APPLE)
 	set(CPACK_GENERATOR "DMG")
 else()
-	set(CPACK_GENERATOR "AppImage;RPM")
+	set(CPACK_GENERATOR "AppImage;RPM;DEB")
 
+	# RPM
 	set(CPACK_RPM_PACKAGE_NAME "vencord-launcher")
-	set(CPACK_RPM_PACKAGE_SUMMARY "Mod launcher for Discord")
+	set(CPACK_RPM_PACKAGE_SUMMARY "Launcher for Discord which loads Vencord")
 	set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
 	set(CPACK_RPM_PACKAGE_GROUP "Applications/Internet")
 	set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 	set(CPACK_RPM_PACKAGE_REQUIRES
 		"qt6-qtbase, qt6-qtdeclarative, qt6-qtquickcontrols2"
 	)
+
+	# DEB
+	set(CPACK_DEBIAN_PACKAGE_NAME "vencord-launcher")
+	set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
+		"Launcher for Discord which loads Vencord"
+	)
+	set(CPACK_DEBIAN_PACKAGE_MAINTAINER "C <claration@riseup.net>")
+	set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+	set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+	set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+	set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS
+		"libqt6core6, libqt6qml6", "libqt63dquick6"
+	)
+	# ??
+	set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}")
 endif()
 
 cmake_policy(SET CMP0153 NEW)
