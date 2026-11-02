@@ -65,17 +65,6 @@ make
 make package
 ```
 
-## Translating
-
-Venject has translation support (pretend I eplain how you can translate.)
-
-## Sponsors
-
-| Thanks to all my [sponsors](https://github.com/sponsors/claration)!! |
-|:-:|
-| <img src="https://sponsors.claration.dev/sponsors.png"> |
-| _**"samara is cute" - Vendicated**_ |
-
 ## Acknowledgements
 
 - [CLARATION](https://github.com/claration) – The maker.
