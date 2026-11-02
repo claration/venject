@@ -116,7 +116,7 @@ public:
 
 	Q_INVOKABLE static QList<LaunchInstance*> getInstances();
 	Q_INVOKABLE [[nodiscard]] static LaunchInstance* getInstanceById(const QString &id);
-	static void launchById(const QString &id, const QStringList &argv);
+	static void launchById(const QString &id, const QJsonArray &argv);
 	Q_INVOKABLE static QString getSupportedIconTypes();
 	Q_INVOKABLE static QString getIconType();
 

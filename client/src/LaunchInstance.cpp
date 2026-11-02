@@ -442,7 +442,7 @@ LaunchInstance* LaunchInstance::getInstanceById(const QString &id)
 #include "LaunchInstanceUpdater.hpp"
 #include <QMessageBox>
 
-void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
+void LaunchInstance::launchById(const QString &id, const QJsonArray &argv) {
 	LaunchInstance *instance = LaunchInstance::getInstanceById(id);
 	if (!instance) return;
 	DiscordInstall *discordInstall = DiscordInstall::getInstanceByUniqueIdentifier(instance->discordUniqueIdentifier());
@@ -479,9 +479,6 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 		}
 	}
 
-	QJsonArray argvJson;
-	for (const auto &arg : argv) argvJson.append(arg);
-
 	QProcessEnvironment env;
 	if (!discordInstall->isFlatpak()) {
 		env = QProcessEnvironment::systemEnvironment();
@@ -489,7 +486,7 @@ void LaunchInstance::launchById(const QString &id, const QStringList &argv) {
 	env.insert("DISABLE_UPDATER_AUTO_PATCHING", "true");
 	env.insert("CLIENT_EXECUTABLE_PATH", QString::fromStdString(shared::OurExecutablePath().string()));
 	env.insert("HOOK_DLL_PATH", QString::fromStdString(shared::OurHookLibraryPath().string()));
-	env.insert("CLIENT_ARGV_JSON", QJsonDocument(argvJson).toJson(QJsonDocument::Compact));
+	env.insert("CLIENT_ARGV_JSON", QJsonDocument(argv).toJson(QJsonDocument::Compact));
 	env.insert("CLIENT_JS_PATH", instance->entryPointPath());
 
 	QVariantMap _customEnv = instance->environmentVariables();

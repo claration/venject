@@ -55,10 +55,17 @@ int main(int argc, char **argv)
 	parser.process(*app);
 
 	QString		launchId = parser.value(launchIdOpt);
-	QStringList launch_mod_argv{QString::fromStdString(shared::OurExecutablePath().string())};
+	QJsonArray	launch_mod_argv;
 
-	for (int i = 1; i < argc; ++i)
+	// app image is VERY special.
+	// See: https://github.com/electron-userland/electron-builder/issues/4650#issuecomment-832792504
+	if (!qgetenv("APPIMAGE").isEmpty()) {
+		launch_mod_argv.append("--appimage-extract-and-run");
+	}
+
+	for (int i = 1; i < argc; ++i) {
 		launch_mod_argv.append(QString::fromLocal8Bit(argv[i]));
+	}
 
 #ifdef Q_OS_WIN
 	QSettings::setDefaultFormat(QSettings::IniFormat);
