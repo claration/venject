@@ -59,9 +59,11 @@ int main(int argc, char **argv)
 
 	// app image is VERY special.
 	// See: https://github.com/electron-userland/electron-builder/issues/4650#issuecomment-832792504
+#ifdef Q_OS_LINUX
 	if (!qgetenv("APPIMAGE").isEmpty()) {
 		launch_mod_argv.append("--appimage-extract-and-run");
 	}
+#endif
 
 	for (int i = 1; i < argc; ++i) {
 		launch_mod_argv.append(QString::fromLocal8Bit(argv[i]));
