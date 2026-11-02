@@ -7,11 +7,11 @@ ARCH 						:= $(shell uname -m)
 ENABLE_QT_DEPLOY			?= ON
 
 ifeq ($(OS),Windows_NT)
-	PACKAGE_GENERATOR			?= NSIS
+	PACKAGE_GENERATOR		?= NSIS
 	CMAKE_GENERATOR 		:= -G "MinGW Makefiles"
 	CPACK_PACKAGE_FILE_NAME := "VencordLauncher-windows-$(ARCH)-setup"
 else
-	PACKAGE_GENERATOR			?= AppImage
+	PACKAGE_GENERATOR		?= AppImage
 	CMAKE_GENERATOR 		:=
 	CPACK_PACKAGE_FILE_NAME := "VencordLauncher-linux-$(ARCH)"
 endif
@@ -23,6 +23,10 @@ configure:
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 		-DQT_DEPLOY_USE_PATCHELF=ON \
 		-DENABLE_QT_DEPLOY=$(ENABLE_QT_DEPLOY)
+	@if [ -f "build/_deps/detours-src/3rdparty/detours_lib/Detours/src/detours.cpp" ]; then \
+		echo "running this shit"; \
+		sed -i 's/ui64/ULL/g' build/_deps/detours-src/3rdparty/detours_lib/Detours/src/detours.cpp; \
+	fi
 
 build: configure
 	cmake --build build --config $(BUILD_TYPE) --parallel $(JOBS)

@@ -6,37 +6,43 @@ endif()
 
 # what the fuck
 if(WIN32 AND MINGW)
-	get_filename_component(MINGW_BIN_DIR
-		"${CMAKE_CXX_COMPILER}"
-		DIRECTORY
+	get_filename_component(MINGW_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		set(COMPILER_DLLS libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		set(COMPILER_DLLS libc++.dll libunwind.dll)
+	endif()
+
+	set(ALL_DLL_NAMES
+		${COMPILER_DLLS}
+		zlib1.dll
+		libzstd.dll
+		libfreetype-6.dll
+		libbrotlidec.dll
+		libbrotlicommon.dll
+		libb2-1.dll
+		libdouble-conversion.dll
+		libicuin78.dll
+		libharfbuzz-0.dll
+		libmd4c.dll
+		libpng16-16.dll
+		libicuuc78.dll
+		libpcre2-16-0.dll
+		libicudt78.dll
+		libglib-2.0-0.dll
+		libgraphite2.dll
+		libbz2-1.dll
+		libintl-8.dll
+		libpcre2-8-0.dll
+		libiconv-2.dll
 	)
 
-	install(FILES
-		"${MINGW_BIN_DIR}/libgcc_s_seh-1.dll"
-		"${MINGW_BIN_DIR}/libstdc++-6.dll"
-		"${MINGW_BIN_DIR}/libwinpthread-1.dll"
-		"${MINGW_BIN_DIR}/zlib1.dll"
-		"${MINGW_BIN_DIR}/libzstd.dll"
-		"${MINGW_BIN_DIR}/libfreetype-6.dll"
-		"${MINGW_BIN_DIR}/libbrotlidec.dll"
-		"${MINGW_BIN_DIR}/libbrotlicommon.dll"
-		"${MINGW_BIN_DIR}/libb2-1.dll"
-		"${MINGW_BIN_DIR}/libdouble-conversion.dll"
-		"${MINGW_BIN_DIR}/libicuin78.dll"
-		"${MINGW_BIN_DIR}/libharfbuzz-0.dll"
-		"${MINGW_BIN_DIR}/libmd4c.dll"
-		"${MINGW_BIN_DIR}/libpng16-16.dll"
-		"${MINGW_BIN_DIR}/libicuuc78.dll"
-		"${MINGW_BIN_DIR}/libpcre2-16-0.dll"
-		"${MINGW_BIN_DIR}/libicudt78.dll"
-		"${MINGW_BIN_DIR}/libglib-2.0-0.dll"
-		"${MINGW_BIN_DIR}/libgraphite2.dll"
-		"${MINGW_BIN_DIR}/libbz2-1.dll"
-		"${MINGW_BIN_DIR}/libintl-8.dll"
-		"${MINGW_BIN_DIR}/libpcre2-8-0.dll"
-		"${MINGW_BIN_DIR}/libiconv-2.dll"
-		DESTINATION bin
-	)
+	foreach(dll ${ALL_DLL_NAMES})
+		list(APPEND INSTALL_FILES "${MINGW_BIN_DIR}/${dll}")
+	endforeach()
+
+	install(FILES ${INSTALL_FILES} DESTINATION bin)
 endif()
 
 if(ENABLE_QT_DEPLOY)

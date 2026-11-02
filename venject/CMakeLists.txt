@@ -61,6 +61,11 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 	-Wextra
 )
 
+# windows arm64 is shittier
+if(WIN32)
+	add_compile_options(-fms-extensions)
+endif()
+
 if(MINGW)
 	target_link_libraries(${PROJECT_NAME} PRIVATE
 		lib_detours

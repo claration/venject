@@ -6,6 +6,9 @@ on:
       - v*
   workflow_dispatch:
 
+env:
+  VERSION: ${{ github.ref_name }}
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
 
       # actions cmake doesn't come with appimage cpack
       - name: Install CMake
-        uses: ssrobins/install-cmake@v1
+        uses: ssrobins/install-cmake@da13ba26f50a41d3b03cfe8ca7265903f04a8932 # v1
         with:
           version: 4.4.2
 
@@ -52,39 +55,77 @@ jobs:
             build/*.deb
 
   build-windows:
-    runs-on: windows-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          include:
+            - os: windows-latest
+              arch: x86_64
+              msystem: MINGW64
+              toolchain: mingw-w64-x86_64-toolchain
+              cmake: mingw-w64-x86_64-cmake
+              qt_base: mingw-w64-x86_64-qt6-base
+              qt_declarative: mingw-w64-x86_64-qt6-declarative
+              qt_tools: mingw-w64-x86_64-qt6-tools
+              qt_svg: mingw-w64-x86_64-qt6-svg
 
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - os: windows-11-arm
+              arch: arm64
+              msystem: CLANGARM64
+              toolchain: mingw-w64-clang-aarch64-toolchain
+              cmake: mingw-w64-clang-aarch64-cmake
+              qt_base: mingw-w64-clang-aarch64-qt6-base
+              qt_declarative: mingw-w64-clang-aarch64-qt6-declarative
+              qt_tools: mingw-w64-clang-aarch64-qt6-tools
+              qt_svg: mingw-w64-clang-aarch64-qt6-svg
 
-      - name: Install dependencies (msys2)
-        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
-        with:
-          msystem: MINGW64
-          install: >
-            git
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-nsis
-            mingw-w64-x86_64-qt6-base
-            mingw-w64-x86_64-qt6-declarative
-            mingw-w64-x86_64-qt6-tools
-            mingw-w64-x86_64-qt6-svg
-            make
-            patch
-          update: true
+      runs-on: ${{ matrix.os }}
 
-      - name: Build
-        shell: msys2 {0}
-        run: |
-          make package BUILD_TYPE=Release JOBS=$(nproc)
+      steps:
+        - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: launcher-windows-x86_64
-          path: |
-            build/*-setup.exe
+        - name: Install dependencies (msys2)
+          uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884 # v2.32.0
+          with:
+            msystem: ${{ matrix.msystem }}
+            install: >
+              git
+              ${{ matrix.toolchain }}
+              ${{ matrix.cmake }}
+              mingw-w64-x86_64-nsis
+              ${{ matrix.qt_base }}
+              ${{ matrix.qt_declarative }}
+              ${{ matrix.qt_tools }}
+              ${{ matrix.qt_svg }}
+              make
+              patch
+            update: true
+
+        - name: Build
+          if: matrix.os == 'windows-latest'
+          shell: msys2 {0}
+          run: |
+            make package BUILD_TYPE=Release JOBS=$(nproc)
+
+        - name: Build
+          if: matrix.os == 'windows-11-arm'
+          shell: msys2 {0}
+          run: |
+            export PATH="/mingw64/bin:$PATH"
+            make package BUILD_TYPE=Release JOBS=$(nproc) CPACK_PACKAGE_FILE_NAME=VencordLauncher-windows-arm64-setup|| exit_code=$?
+
+            if [ -f "build/_CPack_Packages/win64/NSIS/PreinstallOutput.log" ]; then
+              cat build/_CPack_Packages/win64/NSIS/PreinstallOutput.log
+            fi
+
+            exit ${exit_code:-0}
+
+        - name: Upload
+          uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+          with:
+            name: launcher-windows-${{ matrix.arch }}
+            path: |
+              build/*-setup.exe
 
   release:
     runs-on: ubuntu-latest
@@ -104,11 +145,17 @@ jobs:
         name: launcher-windows-x86_64
         path: dist/
 
+    - name: Download Windows ARM64 Artifact
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        name: launcher-windows-arm64
+        path: dist/
+
     - name: Create Release
       uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
       with:
-        name: ${{ env.TAG }}
-        tag_name: ${{ env.TAG }}
+        name: ${{ env.VERSION }}
+        tag_name: ${{ env.VERSION }}
         files: |
           dist/*
         generate_release_notes: true
