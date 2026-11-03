@@ -23,6 +23,18 @@ Visit [releases](https://github.com/claration/venject/releases) and get the late
 
 Building is going to be a bit convoluted for each platform, each having their own unique specifications, but the best reference for building should be looking at how [GitHub actions](./.github/workflows/build.yml) does it.
 
+```sh
+# Supported params:
+#  Whether to run QT's install script       ("ON" default):
+#   ENABLE_QT_DEPLOY=ON
+#  Custom package generator for cpack       (NSIS (Windows) default, AppImage (Linux) default):
+#   PACKAGE_GENERATOR=
+#  Cores to use when compiling              (1 default):
+#   JOBS=1
+#  Debug or release build                   ("Debug" default):
+#   BUILD_TYPE="Release"
+```
+
 ### Debian / Ubuntu Linux
 
 For packaging an AppImage, you're gonna need to do some extra steps outside of the package manager, you can see [here](https://github.com/claration/venject/blob/trunk/.github/workflows/build.yml#L16-L23) on how to do that.
@@ -43,6 +55,7 @@ sudo apt install -y \
 - [MSYS2](https://www.msys2.org/)
 
 ```sh
+# Or a clang toolchain for Windows Arm64
 pacman -S \
     git \
     mingw-w64-x86_64-toolchain \
@@ -56,13 +69,18 @@ pacman -S \
     patch
 ```
 
+
 ### Compiling
 
 ```sh
-# Linux / Windows
+# Linux / Windows for testing
 make
-# Compile then package for AppImage / NSIS
-make package
+# Linux / Windows packaging (Default)
+make package JOBS=$(nproc) BUILD_TYPE=Release
+# Linux packaging (Custom)
+make package JOBS=$(nproc) BUILD_TYPE=Release PACKAGE_GENERATOR=AppImage ENABLE_QT_DEPLOY=ON
+make package JOBS=$(nproc) BUILD_TYPE=Release PACKAGE_GENERATOR=RPM ENABLE_QT_DEPLOY=OFF
+make package JOBS=$(nproc) BUILD_TYPE=Release PACKAGE_GENERATOR=DEB ENABLE_QT_DEPLOY=OFF
 ```
 
 ## Acknowledgements
